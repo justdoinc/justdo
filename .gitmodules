@@ -1,0 +1,6 @@
+[submodule "modules/justdo-web-app-ce"]
+	path = modules/justdo-web-app-ce
+	url = git@github.com:justdoinc/justdo-web-app-ce.git
+[submodule "modules/justdo-landing-app-ce"]
+	path = modules/justdo-landing-app-ce
+	url = git@github.com:justdoinc/justdo-landing-app-ce.git
