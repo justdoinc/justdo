@@ -21,7 +21,9 @@ This repository contains the community edition, source-available version of Just
 
 ## 🚀 **Getting Started**
 
-### Step 1: Install Meteor
+### Step 1: Install Prerequisites
+
+#### Install Meteor
 
 JustDo is built on [Meteor.js](https://www.meteor.com/), a powerful full-stack JavaScript framework for building real-time applications.
 
@@ -29,6 +31,41 @@ Install Meteor.js by running the following command in your terminal:
 ```bash
 curl https://install.meteor.com/\?release\=2.15 | sh
 ```
+
+#### macOS Additional Steps
+
+We have minimized external dependencies as much as possible. However, on macOS, you'll need to ensure that **Python 2.7** is installed, as it is required for the compilation processes of some of our packages. Additionally, you'll need to install the **Xcode Command Line Tools**.
+
+1. **Install Python 2.7 using Homebrew & pyenv:**
+
+Note: The following steps are optional and only required if you don't have Python 2.7 installed on your system. Further they are one of many ways to install Python 2.7 on macOS.
+
+```bash
+brew install pyenv
+pyenv init # Follow the steps presented in the output
+```
+
+*Close your shell and start a new one* to ensure that pyenv is initialized.
+
+```bash
+pyenv install 2.7
+```
+
+2. **Install Xcode Command Line Tools:**
+
+Run the following command to install the Xcode Command Line Tools:
+
+```bash
+xcode-select --install
+```
+
+#### Linux Additional Steps
+
+JustDo is fully supported on Linux. No further steps are required.
+
+#### Windows Users
+
+As of now, JustDo is not officially supported on Windows. However, you can run JustDo on Windows using the Windows Subsystem for Linux (WSL) or a virtual machine.
 
 ### Step 2: Clone the Repository
 
