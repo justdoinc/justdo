@@ -177,7 +177,14 @@ export justdo_landing_app_path="justdo-landing-app-ce/application"
 announceStep "Starting web app"
 
 startMeteor () {
-    local log_file=$(expandPath "$LOG_FILE")
+    # Touch is necessary as `readlink -f` behaves differently in Linux and Mac for non-existing
+    # files (Mac returns empty string).
+    touch "$LOG_FILE"
+
+    # expandPath is intentionally not used here as we don't want to rely on users to install on mac
+    # greadlink or coreutils (to reduce dependencies). Without greadlink, in mac
+    # readlink -f behaves differently for non-existing files (returns empty string).
+    local log_file="$(readlink -f "$LOG_FILE")"
 
     rm "$log_file" 2>/dev/null
 
