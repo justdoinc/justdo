@@ -15,7 +15,10 @@ showEula() {
 
   read -r response
 
-  if [[ "${response,,}" =~ ^[[:space:]]*agree[[:space:]]*$ ]]; then
+  # Convert response to lowercase and trim leading/trailing whitespace
+  lower_response=$(echo "$response" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+
+  if [ "$lower_response" = "agree" ]; then
     local date=$(date +%Y-%m-%d)
     echo "$date" > "$MAIN_DIR/.agreement-signed"
 

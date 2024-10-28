@@ -4,6 +4,7 @@ export ORIGINAL_PWD="${ORIGINAL_PWD:-"$PWD"}"
 cd "$(dirname $0)" # cd to script dir
 
 export NO_COLOR="${NO_COLOR:-"false"}"
+export SUPPRESS_MISSING_FEATURES_ERRORS="true"
 for helper in helpers/*.bash; do
     . $helper
 done
