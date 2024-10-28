@@ -1,0 +1,289 @@
+#!/usr/bin/env bash
+
+#
+# IMPORTANT!!! INTENDED TO BE USED BY justdo only!
+#
+
+# Synopsis
+# ========
+#
+# ./run-justdo [environment_name]
+#
+# environment_name:
+#
+#   Will be used to load environment variables configuration file, the
+#   name of the file loaded will be: .[environment_name]-env-conf
+#
+#   If environment_name isn't set it will default to: config.bash
+#
+# If conf-file isn't provided, we use by default config.bash
+
+# echo 'NODE_TLS_REJECT_UNAUTHORIZED="0" applied, after upgrading Meteor, remove this line'
+# export NODE_TLS_REJECT_UNAUTHORIZED="0"
+
+# Environmental variables:
+# ========================
+#
+# * WEB_APP_HOSTNAME    - self explanatory - can also be configured by using ./configure-dev-environment.bash
+# * LANDING_APP_HOSTNAME - self explanatory - can also be configured by using ./configure-dev-environment.bash
+# * APP_PORT          - (default: 3000) self explanatory - can also be configured by using ./configure-dev-environment.bash
+# * LANDING_APP_PORT  - (default: 4000) self explanatory - can also be configured by using ./configure-dev-environment.bash
+# * APP_EXTERNAL_PORT          - (default: $APP_PORT) If the port used to access the app is different from the port we bind
+#                                                     (example, in case of port forwarding) you can set the external app
+#                                                     port here.
+# * LANDING_APP_EXTERNAL_PORT  - (default: $LANDING_APP_PORT) See explanation for APP_EXTERNAL_PORT
+# * MAIL_URL          - self explanatory - can also be configured by using ./configure-dev-environment.bash
+# * MONGO_TUNNEL_HOST - Set $MONGO_TUNNEL_HOST to a ssh host (including username,
+#                       e.g. a@x.com) to automatically set tunneling to that host
+# * MONGO_TUNNEL_HOST_PORT - Relevant only if $MONGO_TUNNEL_HOST is set.
+#                            The Mongo port in the remote host.
+#                            Default to: 27017.
+# * MONGO_TUNNEL_MONGO_CREDENTIALS - Relevant only if $MONGO_TUNNEL_HOST is set.
+#                                    Should be of the form: "user:pass".
+#                                    Default to: ""
+# * SMTP_TUNNEL_HOST  - Set $SMTP_TUNNEL_HOST to a ssh host (including username,
+#                       e.g. a@x.com) to automatically set tunneling to that host
+# * BIND_TO_NET       - DEPRECATED If set to one of the network interfaces listed on ifconfig
+#                       we will set HOST_DOMAIN to that interface ip automatically
+#                       in the process we will override HOST_DOMAIN configured as
+#                       environmental variable or by using ./configure-dev-environment.bash
+# * DEBUG_ENVIRONMENT - Set to "landing-app"/"web-app" if you want us to run the meteor
+#                       command for the landing app/web-app with the debug command.
+#                       At the moment, only one environment can run with the
+#                       debug command. Leave unset/empty/with any other value
+#                       will have no effect.
+
+# Examples:
+#
+# Connecting to an already tunneled Atlas server:
+#
+# IMPORTANT! turn off jobs processors first!!!
+#
+# Replace XXX with passwords
+#
+#   $ ssh -L 27017:main-shard-00-00-gzrj5.mongodb.net:27017 daniel@52.35.250.242 -N
+#   $ MONGO_URL="mongodb://admin:XXX@localhost:27017/justdo?ssl=true&authSource=admin" OPLOG_URL="mongodb://oplog-reader:XXX@localhost:27017/local?ssl=true&authSource=admin" ./run-justdo
+#
+# Tunneling example:
+#
+#   $ MONGO_TUNNEL_HOST="JustdoMain" MONGO_TUNNEL_HOST_PORT="32000" MONGO_TUNNEL_MONGO_CREDENTIALS="user:pass" MONGO_TUNNEL_AUTH_SOURCE="admin" ./run-justdo
+#
+
+cd "$(dirname $0)" # cd to script dir
+
+export LOGS_FOLDER="dev-logs"
+
+appendPortToURL () {
+    # appendPortToURL $url $port
+    #
+    # Appends the port to the url, if the port isn't port 80
+
+    local url="$1"
+    local port="$2"
+
+    if [[ "$port" != 80 ]]; then
+        echo "$url:$port"
+    else
+        echo "$url"
+    fi
+}
+
+meteor_command=( "meteor" )
+# meteor_command=~/meteor/meteor # uncomment to run meteor from local git checkout.
+
+if [[ "${meteor_command[@]}" != "meteor" ]]; then
+    # XXX I am not sure whether this is really necessary
+    alias meteor="${meteor_command[@]}"
+fi
+
+
+
+configuration_file="config.bash"
+
+if [[ ! -e "$configuration_file" ]]; then
+    announceStep "Calling $ ./justdo configure-dev-environment to create the default configuration file."
+
+    ./justdo configure-dev-environment
+
+    if [[ ! -d "$LOGS_FOLDER" ]]; then
+        mkdir "$LOGS_FOLDER"
+    fi
+
+    announceStep "You can configure ./run-justdo settings on: '$configuration_file'"
+
+    echo ""
+    echo "🚀 First Run Notice 🚀"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "⚠️  This is the first run, so it might take a few minutes to install and compile all dependencies."
+    echo "⏱️  Future runs will be much quicker."
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    wait_time_sec=3
+    echo "➡️ Press <enter> to continue... or wait $wait_time_sec seconds"
+
+    read -t "$wait_time_sec"
+fi
+
+. "$configuration_file"
+
+if [[ -n "$MONGO_TUNNEL_HOST" ]]; then
+
+    MONGO_TUNNEL_HOST_PORT="${MONGO_TUNNEL_HOST_PORT:-"27017"}"
+    announceStep "Setting up Mongo tunnel to $MONGO_TUNNEL_HOST:$MONGO_TUNNEL_HOST_PORT under port 30000 (127.0.0.1)"
+
+    (ssh -L 30000:127.0.0.1:$MONGO_TUNNEL_HOST_PORT "$MONGO_TUNNEL_HOST" -N) &
+
+    if [[ -n "$MONGO_TUNNEL_MONGO_CREDENTIALS" ]]; then
+        MONGO_TUNNEL_MONGO_CREDENTIALS+="@"
+    else
+        MONGO_TUNNEL_MONGO_CREDENTIALS=""
+    fi
+
+    MONGO_URL="mongodb://${MONGO_TUNNEL_MONGO_CREDENTIALS}127.0.0.1:30000/justdo"
+    OPLOG_URL="mongodb://${MONGO_TUNNEL_MONGO_CREDENTIALS}127.0.0.1:30000/local"
+
+    if [[ -n "$MONGO_TUNNEL_AUTH_SOURCE" ]]; then
+        # The db used to authenticate the connecting user
+        MONGO_URL+="?authSource=$MONGO_TUNNEL_AUTH_SOURCE"
+        OPLOG_URL+="?authSource=$MONGO_TUNNEL_AUTH_SOURCE"
+    fi
+
+    export MONGO_URL
+    export OPLOG_URL
+fi
+
+if [[ -n "$SMTP_TUNNEL_HOST" ]]; then
+    announceStep "Setting up SMTP tunnel to $SMTP_TUNNEL_HOST:25 under port 30025 (127.0.0.1)"
+
+    (ssh -L 30025:127.0.0.1:25 "$SMTP_TUNNEL_HOST" -N) &
+
+    export MAIL_URL="smtp://localhost:30025"
+fi
+
+# if [[ -n "$BIND_TO_NET" ]]; then
+#     net_addr=$(ifconfig "$BIND_TO_NET" | grep 'inet addr' | awk "{print \$2}")
+#     net_addr="${net_addr##addr:}"
+#
+#     announceStep "Binding to $BIND_TO_NET ($net_addr)"
+#
+#     export HOST_DOMAIN="$net_addr"
+# fi
+
+export justdo_web_app_path="justdo-web-app-ce/application"
+# export justdo_web_app_path="output/justdo/justdo-web-app-ce/application"
+export justdo_landing_app_path="justdo-landing-app-ce/application"
+# export justdo_landing_app_path="output/justdo/justdo-landing-app/application"
+
+announceStep "Starting web app"
+
+startMeteor () {
+    local log_file=$(expandPath "$LOG_FILE")
+
+    rm "$log_file" 2>/dev/null
+
+    cd "$APP_PATH"
+
+    "${meteor_command[@]}" npm install
+
+    local -a extra_args=()
+    if [[ "$DEBUG_MODE" == "true" ]]; then
+        extra_args+=(debug)
+    fi
+
+    if [[ "$BUNDLE_VISUALIZER" == "true" ]]; then
+        extra_args+=(--extra-packages bundle-visualizer --production)
+    fi
+
+    if [[ "$RUN_PRODUCTION_MODE" == "true" ]]; then
+        extra_args+=(--production)
+    fi
+
+    if [[ -n "$MAX_OLD_SPACE_SIZE" ]]; then
+        export NODE_OPTIONS="--max-old-space-size=$MAX_OLD_SPACE_SIZE"
+    fi
+
+    export METEOR_DISABLE_OPTIMISTIC_CACHING=1
+
+    echo "${extra_args[@]}"
+
+    ROOT_URL="$(appendPortToURL "http://$HOST_DOMAIN" "$EXTERNAL_PORT")" "${meteor_command[@]}"  "${extra_args[@]}" -p $PORT 2>&1 | tee "$log_file"
+}
+
+web_app_log="$LOGS_FOLDER/web-app.log"
+web_app_meteor_port="${APP_PORT:-"3000"}"
+landing_app_meteor_port="${LANDING_APP_PORT:-"4000"}"
+
+web_app_external_meteor_port="${APP_EXTERNAL_PORT:-"$web_app_meteor_port"}"
+landing_app_external_meteor_port="${LANDING_APP_EXTERNAL_PORT:-"$landing_app_meteor_port"}"
+
+(
+    export LOG_FILE="$web_app_log"
+    export PORT="$web_app_meteor_port"
+    export EXTERNAL_PORT="$web_app_external_meteor_port"
+    export APP_PATH="$justdo_web_app_path"
+
+    export APP_VERSION="$(cd $APP_PATH; git describe)"
+    export EXPOSE_APP_VERSION="true"
+
+    export WEB_APP_ROOT_URL="$(appendPortToURL "http://$WEB_APP_HOSTNAME" "$web_app_external_meteor_port")"
+    export LANDING_APP_ROOT_URL="$(appendPortToURL "http://$LANDING_APP_HOSTNAME" "$landing_app_external_meteor_port")"
+
+    export HOST_DOMAIN="$WEB_APP_HOSTNAME"
+    export MAX_OLD_SPACE_SIZE="$WEB_APP_NODE_MAX_OLD_SPACE_SIZE"
+
+    if [[ "$DEBUG_ENVIRONMENT" == "landing-app" ]]; then
+        export DEBUG_MODE="true"
+    fi
+
+    startMeteor
+) &
+
+if [[ -z "$MONGO_URL" ]]; then
+    # If $MONGO_URL is not set, we set it to the local web app's url
+    # for that, we need to wait for the wap app's mongo to become ready.
+    announceStep "Waiting for Web App MongoDB to become ready"
+    while true; do
+        cat "$web_app_log" 2>/dev/null | platformGrep "Started MongoDB."
+
+        if [[ $? -eq 0 ]]; then
+            announceStep "Web App MongoDB ready"
+
+            break
+        fi
+
+        sleep 0.5
+    done
+fi
+
+announceStep "Web app ready, initiating landing app"
+(
+    export LOG_FILE="$LOGS_FOLDER/landing-app.log"
+    export PORT="$landing_app_meteor_port"
+    export EXTERNAL_PORT="$landing_app_external_meteor_port"
+    export APP_PATH="$justdo_landing_app_path"
+
+    export APP_VERSION="$(cd $APP_PATH; git describe)"
+    export EXPOSE_APP_VERSION="true"
+
+    if [[ -z "$MONGO_URL" ]]; then
+        export MONGO_URL="mongodb://localhost:$(($web_app_meteor_port + 1))/meteor"
+    fi
+
+    if [[ -z "$OPLOG_URL" ]]; then
+        export OPLOG_URL="mongodb://localhost:$(($web_app_meteor_port + 1))/local"
+    fi
+
+    export WEB_APP_ROOT_URL="$(appendPortToURL "http://$WEB_APP_HOSTNAME" "$web_app_external_meteor_port")"
+    export LANDING_APP_ROOT_URL="$(appendPortToURL "http://$LANDING_APP_HOSTNAME" "$landing_app_external_meteor_port")"
+
+    export HOST_DOMAIN="$LANDING_APP_HOSTNAME"
+    export MAX_OLD_SPACE_SIZE="$LANDING_APP_NODE_MAX_OLD_SPACE_SIZE"
+
+    if [[ "$DEBUG_ENVIRONMENT" == "web-app" ]]; then
+        export DEBUG_MODE="true"
+    fi
+
+    startMeteor
+) &
+
+wait

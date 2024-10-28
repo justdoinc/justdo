@@ -4,3 +4,6 @@
 [submodule "modules/justdo-landing-app-ce"]
 	path = modules/justdo-landing-app-ce
 	url = git@github.com:justdoinc/justdo-landing-app-ce.git
+[submodule "modules/bash-helpers"]
+	path = modules/bash-helpers
+	url = git@github.com:theosp/bash-helpers.git

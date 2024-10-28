@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+
+export ORIGINAL_PWD="${ORIGINAL_PWD:-"$PWD"}"
+cd "$(dirname $0)" # cd to script dir
+
+export NO_COLOR="${NO_COLOR:-"false"}"
+for helper in helpers/*.bash; do
+    . $helper
+done
+
+export MAIN_DIR="$(expandPath .)"
+export LOGS_FOLDER="$MAIN_DIR/dev-logs"
+
+if [[ ! -d "$LOGS_FOLDER" ]]; then
+    mkdir "$LOGS_FOLDER"
+fi
+
+self="./justdo"
+
+helper_name="$1"
+shift
+
+announceMainStep "Running helper: $helper_name"
+
+# JUSTDO_PACKAGES_DIR is used by utils/packages-publisher.bash
+export JUSTDO_PACKAGES_DIR="$(expandPath output)"
+
+. "utils/eula.bash"
+
+case "$helper_name" in
+    "run")
+        . "utils/run-justdo"
+    ;;
+
+    "join-mailing-list")
+        if [[ -f ".mailing-list-initialized" ]]; then
+            return
+        fi
+
+        curl_exist="$(command -v curl)"
+        wget_exist="$(command -v wget)"
+
+        if [[ -z "$curl_exist" ]] && [[ -z "$wget_exist" ]]; then
+            return
+        fi
+
+        echo
+        echo "📧 Join our mailing list and stay updated with latest news, promotions and terms updates."
+        echo "📩 Enter your email address (or press Enter to skip):"
+        read -r response
+
+        if [[ -n "$response" ]]; then
+            url="https://justdo.com/join-mailing-list"
+
+            if [[ -n "$curl_exist" ]]; then
+            response_code="$(curl -s -o /dev/null -w "%{http_code}" -X POST -d "email=$response" "$url")"
+            elif [[ -n "$wget_exist" ]]; then
+            response="$(wget --server-response --post-data="email=$response" "$url" -O /dev/null 2>&1)"
+            response_code="$(echo "$response" | awk '/^  HTTP/{print $2}')"
+            fi
+
+            echo "$response" > ".mailing-list-initialized"
+
+            echo
+            if [[ $response_code -eq "200" ]]; then
+            echo "Thank you for joining our mailing list! 🎉"
+            else
+            echo "Oops, failed to join the mailing list. Please send us a request at https://justdo.com/contact"
+            fi
+            echo
+        else
+            echo "You can join our mailing list at any time by calling: $self join-mailing-list"
+        fi
+    ;;
+
+    #
+    # Dev helpers
+    #
+    "debug-development-environment")
+        meteor_pid="$(ps aux | grep meteor | grep web-app | grep -v mongo | awk '{print $2}')"
+
+        if [[ -n "$meteor_pid" ]]; then
+            kill -usr1 "$meteor_pid"
+
+            announceStep "Done. Visit: chrome://inspect/#devices"
+        else
+            announceErrorAndExit "Failed to find the development environment Meteor process"
+        fi
+    ;;
+
+    "mongo-backup")
+        mongodump="mongodump"
+
+        if ! commandExists "$mongodump"; then
+            announceErrorAndExit "This helper requires '$mongodump' to be installed. Please install MongoDB tools and ensure '$mongodump' is available in your PATH."
+        fi
+
+        backup_dir="mongo-dumps"
+        mkdir -p "$backup_dir"
+        cd "$backup_dir"
+
+        time_stamp="$(date "+%F-%H:%M")"
+        backup_file="mongo-backup--localhost--$time_stamp.archive.gz"
+
+        mongodump="$(which $mongodump)"
+
+        "$mongodump" \
+            --host "localhost" \
+            --port "3001" \
+            --archive="$backup_file" \
+            --gzip
+    ;;
+    "mongo-reset")
+        mongosh="mongosh"
+
+        if ! commandExists "$mongosh"; then
+            announceErrorAndExit "This helper requires '$mongosh' to be installed. Please install MongoDB tools and ensure '$mongosh' is available in your PATH."
+        fi
+
+        announceStep "ARE YOU SURE?! - type 'yes'"
+
+        read ans
+        if [[ "$ans" != "yes" ]]; then
+            announceStep "Exit without reset"
+
+            exit
+        fi
+
+        "$mongosh" \
+            --host "localhost" \
+            --port "3001" \
+            "meteor" --eval "db.dropDatabase()"
+    ;;
+    "mongo-restore")
+        mongorestore="mongorestore"
+        backup_file="$1"
+
+        if ! commandExists "$mongorestore"; then
+            announceErrorAndExit "This helper requires '$mongorestore' to be installed. Please install MongoDB tools and ensure '$mongorestore' is available in your PATH."
+        fi
+
+        if [[ -z "$backup_file" ]]; then
+            announceMainStep "Usage:"
+
+            echo "$self $helper_name <archive_file>.gz"
+
+            exit
+        fi
+
+        /usr/bin/env "$mongorestore" \
+            --host "localhost" \
+            --port "3001" \
+            --archive="$backup_file" \
+            --nsFrom="justdo.*" --nsTo="meteor.*" \
+            --gzip
+    ;;
+
+    "web-app-shell")
+        cd "justdo-web-app-ce/application"
+
+        meteor shell
+    ;;
+    "landing-app-shell")
+        cd "justdo-landing-app-ce/application"
+
+        meteor shell
+    ;;
+    "configure-dev-environment")
+        configuration_file="config.bash"
+
+        if [[ -f "$configuration_file" ]]; then
+            announceErrorAndExit "configuration file already exists under $configuration_file"
+        fi
+
+        platformCp $MAIN_DIR/default-config.bash $configuration_file
+
+        announceMainStep "Configuration file created under: $configuration_file"
+    ;;
+    *)
+        announceStep "Use one of the following helpers:"
+
+        commands=( $(cat "$(basename $0)" | grep -e '^\s\+".\+")' | platformSed -e 's/\s\+"\(.\+\)")/\1/g' | platformSed -e 's/"\s\+|\s\+"/ /g') )
+
+        n=${#commands[*]}
+        for (( i=0; i < n; i += 1 )); do
+            item="${commands[i]}"
+
+            echo "$0 $item"
+        done
+        unset i n item
+    ;;
+esac
