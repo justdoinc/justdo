@@ -29,7 +29,7 @@ JustDo is built on [Meteor.js](https://www.meteor.com/), a powerful full-stack J
 
 Install Meteor.js by running the following command in your terminal:
 ```bash
-curl https://install.meteor.com/\?release\=2.15 | sh
+curl https://install.meteor.com/\?release\=2.16 | sh
 ```
 
 #### macOS Additional Steps

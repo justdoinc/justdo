@@ -176,7 +176,7 @@ export PASSWORD_STRENGTH_MINIMUM_CHARS="8" # We won't allow setting a number low
 export USER_LOGIN_RESUME_TOKEN_TTL_MS="" # Milliseconds, If unset/empty/0 will use Meteor's default. For 14 days use: ="$((1000 * 60 * 60 * 24 * 14))"
 
 # JustDo licensing
-export JUSTDO_LICENSING_LICENSE="bj1A1C-27D-17B-16F-14A-12C-9D-8J-10C-31YD-23A-17C-15D-12G-12A-10C2C5A5B-13D-13D-13D-11E-9A-7D-7C-30A-20E2B2E2C-12A-8H-9A-7C-30b1B-14F-14B-11E-12G-11I4F2C8D3E2D1F2C4G1E4F1C11B8E3E2B2D-11F-8F-9I-7DB-21C-16B-11F-12H-10G4A9A17B-34==" # Enter your JustDo license here
+export JUSTDO_LICENSING_LICENSE="dB-29D2D-16D-15E-11D-10I-10E-8A-25D-23D-23WF-14E-13C-11C-9C-9c1A5C5B3E-11G-10D-9A-8E-7C-21D-18D-17A-13E2E3G1G-10I-7B-27A-21E-18b1C-11D-12G-10D-9C-9C8D5B5D1D1D1A1F1I4A10B1B6B5B2C1C1H-10F-7B-25A-17BD-14E-12B-11I-9A-75A32B2B4D-17==" # Enter your JustDo license here
 
 # UI Customizations
 export UI_CUSTOMIZATIONS="" # Comma separated list of customizations
@@ -200,6 +200,21 @@ export FILESTACK_KEY=""
 export FILESTACK_SECRET=""
 export FILESTACK_S3_BUCKET_ID=""
 export FILESTACK_S3_BUCKET_REGION=""
+
+# JustDo User Active Position Plugin
+export USER_ACTIVE_POSITION_ENABLED="true" # Set to "true" to enable
+
+# I18n config
+# !!! IMPORTANT
+# Note, if you change this list, you'll also need to update:
+# 1. justdo-packages/shared-gists/lib/both/project-tap.i18n - Ensure to update both your web-app and landing-app
+# [Only if you manage JustDo Build, update also]:
+# 2. nodes/justdo-web-bundle/build-env-vars.bash (Relevant for JustDo SDK Builder only, skip if unfamiliar)
+# 3. justdo-devops/nodes-launchers/launchers/justdo-sdk/default-config.bash (Relevant for JustDo SDK Builder only, skip if unfamiliar)
+# !!! IMPORTANT
+export I18N_DEFAULT_LANGUAGE="en"
+export I18N_ALL_SUPPORTED_LANGUAGES="en,af,az,id,ms,be,bg,bs,ca,cs,sr,da,de,el,et,es,eu,fr,hr,it,kk,sw,ky,lv,lb,lt,hu,mk,nl,nb,uz,pl,pt-PT,pt-BR,ru,ro,sq,sk,sl,fi,sv,vi,tg,tr,uk,hy,yi,he,ar,am,ne,hi,bn,ta,th,km,ko,ja,zh-CN,zh-TW"
+export I18N_CORE_SUPPORTED_LANGUAGES="en,ar,es,fr,ja,ko,pt-BR,vi,ru,it,de,hi,tr,nl,pl,zh-CN,zh-TW,id,th,he,sv,ms"
 
 # Mailgun / Inbound emails
 export INBOUND_EMAILS_ENABLED="false"
