@@ -350,16 +350,8 @@ export JUSTDO_JOBS_PROCESSOR_CONF="justdo-chat-email-notifications;justdo-chat-f
 # Full details about the Site Admins feature can be found in the online manuals
 # of JustDo.
 #
-# To enable the Site Admins feature set the SITE_ADMINS_ENABLED env var
-# below to true.  And list the initial list of site admins in the
-# SITE_ADMINS_EMAILS env var.
-
-export SITE_ADMINS_ENABLED="true" # Set to "true" to enable
 export SITE_ADMINS_EMAILS=""
 # SITE_ADMINS_EMAILS
-#
-# Relevant only in environments where SITE_ADMINS_ENABLED is set to
-# "true".
 #
 # A comma separated list of emails whose users will be automatically set as
 # Site Admins on (every) server init. Site admins can nominate any list of
@@ -397,6 +389,9 @@ export SITE_ADMINS_CONF=""
 #                  Upon Site Admin designation removal, the user that was Site
 #                  Admin *Won't* be removed from the JustDos to which he was
 #                  added automatically while being a Site Admin.
+#
+# * proxy-users - Defines whether the UI of JustDo exposes the proxy-users feature (the
+#                 feature is always enabled, this only affects the UI).
 #
 # * IMPORTANT: There might be other possible confs, check the online manuals of JustDo.
 
