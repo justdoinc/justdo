@@ -407,6 +407,29 @@ export BUGMUNCHER_API_KEY=""
 
 # Firebase
 export FIREBASE_ENABLED="false" # Set to true and set a server key to enable
+# To set up the FIREBASE_SERVER_KEY:
+
+# 1. Open Firebase Console in web browser, choose the corresponding Firebase project
+# 2. Go to Project Settings (cog icon in the top-left section), then select Service Accounts.
+# 3. Follow instructions on page to Create a Service Account if there isn't one yet.
+# 4. click on Generate New Key - this will download a JSON file with the key.
+# 5. Open the JSON file with your favourite text editor, and replace ALL double quotes with single quotes.
+# 6. Copy the content of the file and paste it in the FIREBASE_SERVER_KEY variable below.
+
+# Note, everytime you click on Generate New Private Key, a new key is generated the old ones are still valid
+# there mighy be multiple private keys for the same service account.
+
+# To manage the service account keys, go to the Google Cloud Console, IAM & Admin, Service Accounts (on the left menu).
+
+# You'll see a table with Service accounts for the project.
+
+# Select the service account with similar name to the name you see on Firebase
+# For example if on Firebase for the app you see:
+# https://console.firebase.google.com/u/1/project/justdo-today-xxxx/settings/serviceaccounts/adminsdk
+
+# Select the one in which you see the string "justdo-today-xxxx" in the name.
+
+# Then, under Keys tab, you'll see the keys that were generated for this service account - and you can delete them to revoke access.
 export FIREBASE_SERVER_KEY=""
 
 # Development Mode
