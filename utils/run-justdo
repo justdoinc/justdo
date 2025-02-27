@@ -7,7 +7,7 @@
 # Synopsis
 # ========
 #
-# ./run-justdo [environment_name]
+# ./run-justdo [environment_name] [--prefer-existing-env-vars]
 #
 # environment_name:
 #
@@ -15,6 +15,11 @@
 #   name of the file loaded will be: .[environment_name]-env-conf
 #
 #   If environment_name isn't set it will default to: config.bash
+#
+# --prefer-existing-env-vars:
+#   
+#   If this flag is provided, existing environment variables will take precedence
+#   over those defined in the configuration file.
 #
 # If conf-file isn't provided, we use by default config.bash
 
@@ -96,7 +101,17 @@ if [[ "${meteor_command[@]}" != "meteor" ]]; then
     alias meteor="${meteor_command[@]}"
 fi
 
+# Parse arguments
 
+prefer_existing_env_vars=false
+
+for arg in "$@"; do
+    if [[ "$arg" == "--prefer-existing-env-vars" ]]; then
+        prefer_existing_env_vars=true
+    elif [[ "$arg" != --* ]]; then
+        configuration_file_env="$arg"
+    fi
+done
 
 configuration_file="config.bash"
 
@@ -124,7 +139,40 @@ if [[ ! -e "$configuration_file" ]]; then
     read -t "$wait_time_sec"
 fi
 
-. "$configuration_file"
+if [[ "$prefer_existing_env_vars" == true ]]; then
+    # Create a temporary file to store modified configuration
+    temp_config_file=$(mktemp)
+    
+    # Copy the original configuration file
+    cp "$configuration_file" "$temp_config_file"
+    
+    # Get all currently defined environment variables
+    existing_vars=$(env | cut -d= -f1)
+    
+    # For each existing variable, remove its export line from the temp config
+    for var in $existing_vars; do
+        # Define the pattern to match export statements for this variable
+        export_pattern="^\s*export\s+$var="
+        
+        # Check if the variable exists in the config file before attempting to remove it
+        if grep -qE "$export_pattern" "$temp_config_file"; then
+            announceStep "Removing export line for $var"
+            # Remove export lines for this variable
+            platformSed -i -E "/$export_pattern/d" "$temp_config_file"
+        fi
+    done
+    
+    # Source the modified configuration file
+    . "$temp_config_file"
+    
+    # Clean up
+    rm -f "$temp_config_file"
+    
+    announceStep "Using existing environment variables where available"
+else
+    # Source the configuration file normally
+    . "$configuration_file"
+fi
 
 if [[ -n "$MONGO_TUNNEL_HOST" ]]; then
 

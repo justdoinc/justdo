@@ -30,7 +30,7 @@ export JUSTDO_PACKAGES_DIR="$(expandPath output)"
 
 case "$helper_name" in
     "run")
-        . "utils/run-justdo"
+        . "utils/run-justdo" "$@"
     ;;
 
     "join-mailing-list")
