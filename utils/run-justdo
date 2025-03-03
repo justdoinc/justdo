@@ -147,20 +147,20 @@ if [[ "$prefer_existing_env_vars" == true ]]; then
     cp "$configuration_file" "$temp_config_file"
     
     # Get all currently defined environment variables
-    existing_vars=$(env | cut -d= -f1)
+    existing_vars="$(env | platformGrep -E '^[[:alnum:]_]+=.*$' | cut -d= -f1)"
     
     # For each existing variable, remove its export line from the temp config
-    for var in $existing_vars; do
+    while IFS= read -r var; do
         # Define the pattern to match export statements for this variable
         export_pattern="^\s*export\s+$var="
         
         # Check if the variable exists in the config file before attempting to remove it
-        if grep -qE "$export_pattern" "$temp_config_file"; then
+        if platformGrep -qE "$export_pattern" "$temp_config_file"; then
             announceStep "Removing export line for $var"
             # Remove export lines for this variable
             platformSed -i -E "/$export_pattern/d" "$temp_config_file"
         fi
-    done
+    done <<< "$existing_vars"
     
     # Source the modified configuration file
     . "$temp_config_file"
@@ -209,7 +209,7 @@ if [[ -n "$SMTP_TUNNEL_HOST" ]]; then
 fi
 
 # if [[ -n "$BIND_TO_NET" ]]; then
-#     net_addr=$(ifconfig "$BIND_TO_NET" | grep 'inet addr' | awk "{print \$2}")
+#     net_addr=$(ifconfig "$BIND_TO_NET" | platformGrep 'inet addr' | awk "{print \$2}")
 #     net_addr="${net_addr##addr:}"
 #
 #     announceStep "Binding to $BIND_TO_NET ($net_addr)"
