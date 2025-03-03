@@ -1,0 +1,19 @@
+services:
+  mongodb:
+    image: mongo:7.0.5
+    ports:
+      - "27017:27017"
+
+  justdo:
+    image: justdoinc/justdo:latest
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+      - "4000:4000"
+    depends_on:
+      - mongodb 
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/meteor
+      # Here you can override the default environment variables
+      # For the list of supported environment variables, please check:
+      # https://github.com/justdoinc/justdo/blob/master/default-config.bash
