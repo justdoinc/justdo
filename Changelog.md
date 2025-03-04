@@ -1,3 +1,8 @@
+2025.03.05, Version 5.8.3
+
+* Update web-app to v5.8.3
+* Update landing-app to v5.8.3
+
 2025.02.19, Version 5.8.2
 
 * Update shipped license to 15 free users on localhost
