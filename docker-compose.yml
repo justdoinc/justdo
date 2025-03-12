@@ -1,19 +1,251 @@
+volumes:
+  mongodb-data:
+    # This named volume defaults to Docker's internal storage.  If you prefer a
+    # specific host path (e.g., to browse files on your Mac or manage backups),
+    # you can use a bind mount instead:
+    #
+    # driver: local
+    # driver_opts:
+    #   type: none
+    #   o: bind
+    #   device: /absolute/path/on/host/mongodb-data
+    #
+    # For details: https://docs.docker.com/storage/bind-mounts/
+
+  mongodb-config:
+    # Used to persist the replica set configuration.
+
 services:
   mongodb:
+    # Despite the fact we are using a single MongoDB instance, we are using a
+    # replica set to support Meteor's oplog-tailing based reactivity - this is
+    # a requirement for JustDo.
+    #
+    # For the parts related to the configuration of the MongoDB replica set, we
+    # owe our thanks to the following guide from which we borrowed quite a bit:
+    # https://medium.com/workleap/the-only-local-mongodb-replica-set-with-docker-compose-guide-youll-ever-need-2f0b74dd8384
+    # https://archive.is/wip/aVFku
     image: mongo:7.0.5
+
+    # We override the entrypoint with a small bash snippet that generates a
+    # mongo-keyfile if it’s missing
+    entrypoint: >
+      bash -c '
+        set -e
+        # If no keyFile in /data/configdb, generate one
+        if [ ! -f /data/configdb/mongo-keyfile ]; then
+          echo "No keyFile found in /data/configdb; generating one..."
+          openssl rand -base64 756 > /data/configdb/mongo-keyfile
+          chmod 400 /data/configdb/mongo-keyfile
+        fi
+        # Then hand off control to the official docker-entrypoint.sh with our mongod args
+        exec /usr/local/bin/docker-entrypoint.sh "$@"
+      '
+
+    command:
+      - "mongod"
+      - "--replSet"
+      - "rs0"
+      - "--bind_ip_all"
+      - "--port"
+      - "27017"
+      - "--keyFile"
+      - "/data/configdb/mongo-keyfile"
+      - "--auth"
+
+    # We bind MongoDB’s default port (27017) to localhost (127.0.0.1) so you
+    # can use tools like MongoDB Compass or the mongo CLI for backups/debugging
+    # without publicly exposing the database.  If you need remote access,
+    # switch to "0.0.0.0:27017:27017" - *and use a secure username/password*.
+    #
+    # You can also change the host-bound port (e.g., "127.0.0.1:32000:27017")
+    # without affecting JustDo’s internal configuration, since it connects to
+    # MongoDB via Docker’s internal network on port 27017.
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
+
+    # "This healthcheck is used to ensure the MongoDB replica set is properly
+    # configured.  It will fail if the replica set is not properly configured."
+    # https://archive.is/wip/aVFku
+    healthcheck:
+      test: >
+        bash -c "echo \"
+          try {
+            rs.status()
+          } catch (err) {
+            rs.initiate({
+              _id:'rs0',
+              members:[{_id:0, host:'mongodb:27017'}]
+            })
+          }
+        \" | mongosh --port 27017 -u ${MONGO_USERNAME:-admin} -p ${MONGO_PASSWORD:-password} --authenticationDatabase admin"
+      interval: 5s
+      timeout: 30s
+      retries: 30
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb # Used to persist the replica set configuration.
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-password} 
+      # IMPORTANT! ↑ You *must* change this to a secure password if you open it
+      # beyond localhost.
 
   justdo:
     image: justdoinc/justdo:latest
     platform: linux/amd64
     ports:
-      - "3000:3000"
-      - "4000:4000"
+      # JustDo consists of two apps that need to know their respective ports
+      # (for redirects between the landing page and the main web app). For
+      # simple setups without a reverse proxy, the internal and external ports
+      # should match.
+      - "${LANDING_APP_PORT:-3150}:${LANDING_APP_PORT:-3150}"
+      - "${APP_PORT:-3151}:${APP_PORT:-3151}"
     depends_on:
-      - mongodb 
+      - mongodb
     environment:
-      - MONGO_URL=mongodb://mongodb:27017/meteor
-      # Here you can override the default environment variables
-      # For the list of supported environment variables, please check:
-      # https://github.com/justdoinc/justdo/blob/master/default-config.bash
+      - MONGO_URL=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/justdo?authSource=admin&replicaSet=rs0
+      - MONGO_OPLOG_URL=mongodb://${MONGO_USERNAME:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/local?authSource=admin&replicaSet=rs0
+
+      # For most setups, these must match the values used in 'ports:' above.
+      - LANDING_APP_PORT=${LANDING_APP_PORT:-3150}
+      - APP_PORT=${APP_PORT:-3151}
+
+      # For a full list of supported environment variables, see:
+      # https://github.com/justdoinc/justdo/blob/master/default-config.bash You
+      # can override any default configurations by setting values here.
+
+      # Common environment variable modifications (uncomment as needed):
+      #
+      # 1. Connecting to a custom MongoDB server:
+      #
+      # - MONGO_URL=mongodb://user:password@myhost:27017/justdo
+      # - MONGO_OPLOG_URL=mongodb://user:password@myhost:27017/local
+      #
+      # Notes:
+      #
+      #   a. Meteor relies on the MongoDB's oplog to provide reactivity.
+      #      If you're using a custom MongoDB server, you must ensure it is
+      #      using replica set configuration and that the 'local' database is
+      #      enabled. Otherwise the app will malfunction, and behave in an
+      #      unexpected manner.
+      #
+      #   b. This replaces MONGO_URL/MONGO_OPLOG_URL earlier defined entirely, so remove them to avoid duplication.
+      #
+      #   c. If you're using a custom MongoDB server:
+      #      i.   Remove the entire 'mongodb:' service definition above.
+      #      ii.  Under 'justdo' service, remove '- mongodb' from 'depends_on'. 
+      #           If that leaves 'depends_on' empty, remove it entirely.
+      #      iii. Remove '- mongodb-data:' and '- mongodb-config:' from
+      #           'volumes'. If 'volumes' is empty, remove it entirely.
+      #
+      #   d. Example for connecting to MongoDB Atlas:
+      #
+      #      Atlas requires a separate user for the oplog reading with read
+      #      access to the 'local' db. See step 6.2 here:
+      #      http://archive.is/B8XRf
+      #
+      #      The following was tested with the free tier of MongoDB Atlas (on
+      #      March 2025, using MongoDB 8, which was the current free tier
+      #      version):
+      #
+      #      1. Create the cluster.
+      #      2. Under the Database Access section create two users:
+      #         - one named 'admin' with read and write access to the 'justdo'
+      #           database.  Under 'Database User Privileges', Under 'Built-In
+      #           Roles', select 'Read and Write to Any Database' (it translates
+      #           to 'readWriteAnyDatabase@admin')
+      #         - one named 'oplog-reader' with read access to the 'local'
+      #           database.  Under 'Database User Privileges', Under 'Specific
+      #           Privileges', set 'read@local'
+      #      3. Under the Network Access section, add your IP address to the
+      #         allowed IP addresses.
+      #      4. Under the Clusters section, click on 'Connect', Select
+      #         'Driver', 'Node.js', '4.1 or later', 'Use a connection string'
+      #      5. Replace the <username>, <password>, <cluster-url>, and
+      #         <app-name> in the URLs below.
+      #      6. NOTE by default the connection string doesn't have the database
+      #         name, the authSource, and the readPreference parameters - you need
+      #         to add them.
+      #         It is best that you'll update the connection string below,
+      #         instead of copy-pasting the connection string from the MongoDB
+      #         Atlas UI.
+      #
+      #      When connecting use the following URLs:
+      #
+      #      - MONGO_URL=mongodb+srv://<username>:<password>@<cluster-url>/justdo?appName=<app-name>&retryWrites=true&w=majority&authSource=admin&readPreference=primary
+      #      - MONGO_OPLOG_URL=mongodb+srv://<username>:<password>@<cluster-url>/local?appName=<app-name>&retryWrites=true&w=majority&authSource=admin&readPreference=primary
+      #
+      # 2. Use a Custom Domain + Reverse Proxy:
+      #
+      #   - LANDING_APP_HOSTNAME=yourapp.example.com
+      #   - WEB_APP_HOSTNAME=yourapp.example.com
+      #
+      # Notes:
+      #   a. The default JustDo license is valid only for localhost. If you plan to use a
+      #      custom domain, you’ll need a new license. Check https://justdo.com/pricing—
+      #      trial periods are available.
+      #
+      #      When requesting a license, keep in mind that it’s tied to the
+      #      domain name of your landing app (excluding any port numbers).  For
+      #      instance, if your landing page is at
+      #      https://justdo.example.com:8080, the license will apply to
+      #      justdo.example.com.
+      #
+      #   b. For the *JustDo Mobile App* to work properly, you should follow
+      #      the following domain structure:
+      #
+      #      - justdo.example.com          (Landing Page)
+      #      - app-justdo.example.com      (Web App)
+      #
+      #      The key point is that the web app domain shares the same base domain as the
+      #      landing page, prefixed with 'app-'.
+      #
+      #      The following is also a valid domain structure:
+      #
+      #      - x.example.com          (Landing Page)
+      #      - app-x.example.com      (Web App)
+      #
+      #      To expose both apps on port 80 (or 443) for these separate domains, you’ll
+      #      likely need a reverse proxy (e.g., Nginx or AWS ALB) that routes requests
+      #      to the correct internal ports.
+      #
+      #      For instance:
+      #
+      #      - The reverse proxy routes justdo.example.com → port 3150 (landing page)
+      #      - The reverse proxy routes app-justdo.example.com → port 3151 (web app)
+      #
+      #      *You must* tell the apps their public-facing domains differ from the internal
+      #      bindings. For that, set the following environment variables:
+      #
+      #      - LANDING_APP_EXTERNAL_PORT=80
+      #      - APP_EXTERNAL_PORT=80
+      #
+      #      So, a full reverse proxy example for the JustDo Mobile app (on justdo.example.com)
+      #      and the JustDo Web App (on app-justdo.example.com) might be:
+      #
+      #      - LANDING_APP_HOSTNAME=justdo.example.com
+      #      - APP_HOSTNAME=app-justdo.example.com
+      #      - LANDING_APP_EXTERNAL_PORT=80
+      #      - APP_EXTERNAL_PORT=80
+      #
+      #      Typically, the reverse proxy handles SSL. If you enable SSL, you’ll likely use
+      #      port 443 externally for both apps. In that scenario:
+      #      - LANDING_APP_EXTERNAL_PORT=443
+      #      - APP_EXTERNAL_PORT=443
+      #
+      #      Don’t forget to set up a redirect from port 80 to 443 if you’re using SSL.
+      #
+      # 3. Setting an acquired JustDo license:
+      #
+      # - JUSTDO_LICENSING_LICENSE=YOUR_LICENSE_KEY
+      #
+      # Note: When requesting a license, keep in mind that it’s tied to the
+      # domain name of your landing app (excluding any port numbers).  For
+      # instance, if your landing page is at https://justdo.example.com:8080,
+      # the license will apply to justdo.example.com.
+      #
+      # 4. Set up an SMTP server (for email notifications):
+      #
+      # - MAIL_SENDER_EMAIL=you@example.com  # The email address used to send emails
+      # - MAIL_URL=smtps://<you@example.com>:<password>@<smtp.example.com>:465/?secure=true # The SMTP server address
