@@ -1,0 +1,72 @@
+---
+description: Guidelines for converting MongoDB collection methods to their async equivalents
+globs: ["**/*.coffee", "**/*.js", "**/package.js", "**/methods.js", "**/methods.coffee"]
+alwaysApply: false
+---
+# Meteor 3 Migration Guidelines
+
+## MongoDB Method Conversion
+
+1. Replace collection methods with their async counterparts:
+   - find().fetch() → await find().fetchAsync()
+   - findOne() → await findOneAsync()
+   - insert() → await insertAsync()
+   - update() → await updateAsync()
+   - remove() → await removeAsync()
+   - upsert() → await upsertAsync()
+   - find().count() → await find().countAsync()
+
+2. Add 'await' before each async call
+
+3. For CoffeeScript in Meteor:
+   - DO NOT add the 'async' keyword to functions - CoffeeScript automatically adds it when compiling
+   - Add console.log statements to debug execution flow if needed
+   - When functions throw errors, ensure tests are updated to handle async rejections
+   - For testing async error cases, use try/catch with await:
+     ```
+     try
+       await functionCall()
+       assert.fail("Expected to throw")
+     catch error
+       expect(error).to.exist
+     ```
+
+## Naming Conventions
+
+4. Naming conventions for async methods:
+   - Add "Async" suffix to method names that use async MongoDB operations
+   - Example: `getQuickNoteDoc` → `getQuickNoteDocAsync`
+   - Update all internal method calls to use the new async method names
+   - Keep Meteor method names in `Meteor.methods` unchanged for backward compatibility
+   - Update the implementation of Meteor methods to call the new async methods
+
+## Meteor Methods
+
+5. Check methods that use these operations:
+   - Methods that now use await should be made async-aware
+   - Update method calls to use Meteor.callAsync instead of Meteor.call
+
+6. Make sure functions that return collection operation results return the awaited result
+
+## Transition Period
+
+7. During the transition period (Meteor 2.16 to Meteor 3):
+   - Both sync and async MongoDB methods are supported
+   - In test files, you can keep using the original MongoDB methods for verification
+   - Only add `await` when calling the API methods that were converted to async
+
+## Testing
+
+8. Testing the implementation:
+   - Start dev environment: `cd ../../../justdo && ./run-dev-environment.bash`
+   - Run tests: `cd ../../../justdo && ./test-dev-environment.bash`
+   - Run tests and exit after completion: `cd ../../../justdo && ./test-dev-environment.bash --once`
+   - Run a specific test: `cd ../../../justdo && MOCHA_GREP="/test pattern/i" ./test-dev-environment.bash`
+   - Run a specific test and exit after completion: `cd ../../../justdo && MOCHA_GREP="/test pattern/i" ./test-dev-environment.bash --once`
+   - For testing async/await changes specifically, watch for:
+     - Promise rejection warnings in the console
+     - Tests that pass but should fail (error handling issues)
+     - Missing await keywords causing unexpected behavior
+     - Unexpected unhandled promise rejections
+   - Debug using browser console and server logs for async execution flow
+

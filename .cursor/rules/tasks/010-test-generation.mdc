@@ -1,0 +1,139 @@
+---
+description: Detailed guidance for creating comprehensive tests in the JustDo codebase
+globs: ["**/*.app-test.coffee", "**/*.test.coffee", "**/*.test.js", "**/tests/**/*"]
+alwaysApply: false
+---
+# Test Generation Guidelines
+
+## Test File Creation Instructions
+
+1. **Naming and Location:**
+   - All test files is named with `.app-test.coffee` extension
+   - Place test files in the same directory as the code being tested
+   - Use package condition check: `if Package["package-name"]?`, package-name should be exactly the same as the one in package.js, including the portion before the colon ":".
+
+2. **Basic Structure:**
+   ```coffeescript
+   if Package["package-name"]?
+     {expect, assert} = require "chai"
+     
+     describe "Package API", ->
+       # Setup variables
+       # before/beforeEach/after/afterEach hooks
+       # Test groups and cases
+   ```
+   - Refer to existing tests that has the `.app-test.coffee` extension. The codebase may contain legacy unittests that does not have this extention, those files should be ignored.
+
+3. **Setup and Cleanup:**
+   - Use `before/beforeEach` for setup and `after/afterEach` for cleanup
+   - Create helper functions for test data creation and cleanup
+   - For async environment setup: `before (done) -> APP.getEnv -> done()`
+   - Reset all affected collections between tests
+   - Create required test objects with all mandatory fields
+
+4. **Required Fields for Common Objects:**
+   - Use APIs from the `grid-data` package to CRUD Tasks
+   - Use APIs from the `justdo-projects` package to CRUD Projects
+   - `justdo-tasks-collections-manager/lib/both/tasks-schema.coffee` contains the schema definition of a Task
+   - `justdo-projects/lib/both/schema.coffee` contains the schema definition of a Project
+
+5. **Path Format in Grid API:**
+   - Use trailing slashes: `/#{parent_id}/#{task_id}/`
+   - Root path should be `/#{root_task_id}/`
+
+6. **Testing Asynchronous Code:**
+   - Use `async/await` pattern for Promise-based APIs
+   - For callback APIs, use the `done` parameter
+   - Handle errors with try/catch in async tests:
+     ```coffeescript
+     it "should handle errors", ->
+       try
+         await APP.package_name.asyncMethod(invalid_params)
+         assert.fail("Expected to throw error")
+       catch error
+         expect(error).to.exist
+       return
+     ```
+   - DO NOT add the 'async' keyword to test functions - CoffeeScript automatically adds it when compiling
+   - When testing methods with "Async" suffix, make sure to use await:
+     ```coffeescript
+     it "should perform expected behavior", ->
+       # Execute
+       result = await APP.package_name.someMethodAsync(params)
+       
+       # Verify
+       expect(result).to.exist
+       return
+     ```
+
+7. **Collection operation vs Existing APIs:**
+   - Some collections are exposed to APP.collections, some are exposed under a package's namespace only, and some are available in both places.
+   - When a collection operation is required, try to search for APIs that uses that collection to find existing APIs that does the job, instead of updating the collection directly.
+     e.g. Instead of calling `APP.collections.Tasks.insert()`, Use `APP.projects._grid_data_com.addChild/addRootChild`
+   - This would ensure proper validation and the execution of hooks, to deliver accurate test results.
+   - If the operation involves CRUD of Tasks, ensure to look into `grid-data-com-server-api.coffee` for relevant APIs
+   - If the operation involves CRUD of Projects, ensure to look into the `justdo-projects` package for relevant APIs
+
+8. **Using Existing APIs vs Mocking:**
+   - Prefer using existing APIs directly instead of mocking when possible
+   - The test environment creates a separate database for testing
+   - Only mock external services or APIs that cannot be tested directly
+   - If you need to mock, follow these guidelines:
+     ```coffeescript
+     before ->
+       original_method = APP.package_name.methodToMock
+       APP.package_name.methodToMock = (args) -> return mock_result
+     
+     after ->
+       APP.package_name.methodToMock = original_method
+     ```
+
+9. **Testing Behavioral Patterns:**
+   - Task deletion is logical, check for `_raw_removed_date`, not non-existence
+   - Verify field existence rather than assuming records are deleted
+   - Test both success cases and expected error cases
+   - Include at least one assertion for each expected behavior
+   - Structure tests with clear Setup, Execute, and Verify sections:
+     ```coffeescript
+     it "should perform expected behavior", ->
+       # Setup
+       # ...setup code...
+       
+       # Execute
+       result = APP.package_name.someMethod(params)
+       
+       # Verify
+       expect(result).to.exist
+       # ...more assertions...
+       
+       return
+     ```
+
+## Running Tests
+   - After making changes to a test file, always run the tests to verify your changes
+   - Fix any failing tests before proceeding with further changes
+   - If you encounter MongoDB connection issues, try restarting the test environment
+
+## Common Issues and Solutions
+
+1. **MongoDB Connection Issues:**
+   - If you encounter MongoDB connection timeouts, try restarting the test environment
+   - Make sure no other instances of the test environment are running
+
+2. **Missing Required Fields:**
+   - Tasks require specific fields like `parents2` with the correct structure
+   - Check the schema definitions if you're unsure about required fields
+
+3. **Test Environment Setup:**
+   - Always use `APP.getEnv` in the `before` hook to ensure the environment is ready
+   - Clean up all test data in the `after` hook to prevent test pollution
+
+4. **Assertion Failures:**
+   - Be specific in your assertions to make debugging easier
+   - Use descriptive error messages in `assert.fail()` calls
+
+5. **Async/Await Issues:**
+   - Missing `await` before async method calls is a common source of errors
+   - Make sure to use `await` with all methods that have "Async" suffix
+   - Use try/catch blocks to properly handle async errors
+   - Remember that CoffeeScript automatically adds the 'async' keyword to functions that use await

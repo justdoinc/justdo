@@ -1,0 +1,84 @@
+---
+description: Guidelines for verifying Meteor package integration in the JustDo codebase
+globs: 
+alwaysApply: true
+---
+# Meteor Package Integration Verification
+
+## Package Existence vs. Integration
+
+When discussing Meteor packages in the JustDo codebase, it's important to distinguish between:
+
+1. **Package Existence**: Whether a package exists in the codebase (in repositories or submodules)
+2. **Package Integration**: Whether a package is properly integrated into a Meteor application
+
+A package can exist in the codebase but not be integrated into an application, making it effectively unavailable at runtime.
+
+## Verifying Package Integration
+
+To fully verify if a package is integrated and available in a Meteor application, you must check all of the following:
+
+### 1. Package Existence
+
+First, confirm the package exists in one of these locations:
+- In `modules/justdo-packages/` (source-available packages)
+- In `modules/justdo-ee-packages/` (enterprise edition packages)
+- In `modules/justdo-bespoke-packages/` (client-specific packages)
+- In the Meteor package ecosystem (published packages via Atmosphere)
+- In the npm ecosystem (for npm packages used through Meteor)
+
+### 2. Symlink Verification
+
+Check if the package is properly symlinked in the application:
+- For local packages, verify there's a symlink in `application/packages/` pointing to the package directory
+- For example: `application/packages/justdo-accounts` -> `../../modules/justdo-packages/justdo-accounts`
+
+### 3. Meteor Package Inclusion
+
+Check if the package is included in the Meteor application's packages list:
+- Open `.meteor/packages` in the application directory
+- Look for the package name as it appears in its `package.js` file under the `name` field
+- Example: If `package.js` contains `name: "justdoinc:justdo-accounts"`, then `.meteor/packages` should include `justdoinc:justdo-accounts`
+
+## Example Verification Process
+
+For a comprehensive integration check, follow these steps:
+
+```bash
+# 1. Find the package in the codebase
+find . -type d -name "justdo-accounts"
+
+# 2. Check the package definition to find its official name
+cat modules/justdo-packages/justdo-accounts/package.js | grep "name:"
+
+# 3. Verify symlink in application/packages
+ls -la application/packages/justdo-accounts
+
+# 4. Confirm presence in .meteor/packages
+grep "justdoinc:justdo-accounts" application/.meteor/packages
+```
+
+## Package.js Extension: i18n Support
+
+JustDo has extended the standard Meteor package.js API with custom i18n functionality:
+
+1. The extension is implemented in the `000-package-js-i18n` package
+2. It adds the global `addI18nFiles` function that can be used in package.js files
+3. This function helps manage language file loading across the application
+
+For detailed i18n implementation, see:
+@file .cursor/rules/tasks/030-i18n-files.mdc
+
+## Common Integration Issues
+
+1. **Missing Symlink**: Package exists but isn't symlinked in application/packages
+2. **Incorrect Package Name**: Mismatch between package.js name and .meteor/packages entry
+3. **Version Conflicts**: Two packages depend on different versions of the same package
+4. **Missing Dependencies**: Package is added but its dependencies aren't included
+
+## Checking for Active Plugins
+
+Some packages act as plugins and require additional verification:
+1. Check the package's documentation for activation requirements
+2. Look for initialization code in the application startup sequence
+3. Verify any required configuration settings are present 

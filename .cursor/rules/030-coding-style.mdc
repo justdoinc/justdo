@@ -1,0 +1,86 @@
+---
+description: Language-specific conventions and best practices
+globs: ["**/*.bash", "**/*.sh", "**/*.coffee", "**/*.html", "**/*.sass", "**/*.css"]
+alwaysApply: true
+---
+# Coding Style Guidelines
+
+## Bash Scripting Conventions
+
+- **Preferred Shell Language**:
+  - Bash is the preferred shell scripting language for all scripts in this repository
+  - Always use Bash instead of other shells (sh, zsh, fish, etc.) for new scripts
+  - Existing scripts in other shells should be migrated to Bash when possible
+
+- **Shebang Line**:
+  - All Bash scripts must use `#!/usr/bin/env bash` as the shebang line
+  - Never use `#!/bin/bash` as it is not portable across systems
+  - The env-based shebang allows the script to use the bash version found in PATH
+  - This is especially important for cross-platform compatibility (macOS/Linux)
+
+- **Variable Naming**:
+  - Use lowercase for regular variables: `package_name`, `file_path`, `current_dir`
+  - Use UPPERCASE only for constants and environment variables: `APP_VERSION`, `NODE_ENV`
+  - Example: `package_name="$(echo "$rel_path" | cut -d'/' -f1)"` (not `PACKAGE_NAME=...`)
+- **Parameter Quoting**:
+  - Always double-quote variable references: `"$variable"` (not `$variable`)
+  - Double-quote command substitutions: `"$(command)"` (not `$(command)`)
+  - This prevents word splitting and unexpected behavior with spaces/special characters
+  - Example: `if [[ -n "$package_name" ]]; then` (not `if [[ -n $package_name ]]; then`)
+
+## Core Philosophy
+
+- Code is primarily written for humans to read and understand, not just for computers to execute
+- "Explicit is better than implicit. Simple is better than complex. Readability counts."
+- Maintain consistency with existing code style when modifying files
+- Keep code DRY (Don't Repeat Yourself)
+- Prefer verbose variable names and maintainability over concise code
+- Perform computations on client when possible, not server-side
+- Avoid whole-database caching on server instances (use infrastructure-level caching if needed)
+
+## CoffeeScript Rules
+
+- **Runtime**: Node.js v14 - use compatible syntax (no optional chaining, nullish coalescing)
+- Omit parentheses for empty argument lists: `a = -> true` instead of `a = () -> true`
+- Use dot notation for object properties: `obj.prop` instead of `obj["prop"]`
+- Always include explicit `return` except in one-liners
+- Don't wrap if conditions in parentheses: `if x` instead of `if (x)`
+- Use double quotes `"` instead of single quotes
+- Use triple double quotes `"""` for multiline strings and HTML content
+
+## Security Guidelines
+
+- Always use `xssGuard` helper with triple braces: `{{{xssGuard content}}}` instead of `{{{content}}}`
+
+## Database Guidelines
+
+- Collection names: under_scored (plugins add short prefix, e.g., `meetings_`)
+- Field names: under_scored
+- Always specify `fields` option in all queries (find/findOne/etc.)
+- Request only the minimum fields needed
+- Use `{fields: undefined}` explicitly when all fields are required
+- Ensure proper indexes are in place for all queries
+
+## Frontend Guidelines
+
+- **Libraries**: Use Underscore.js for operations on JS data structures
+- **Frontend**: Blaze framework for templates and UI components
+- **HTML/Blaze**:
+  - Only use <a> tags for real links to other pages/external sources
+  - Never use `href="#"` without `e.preventDefault()` in event handler
+  - Templates naming: under_scored
+  - Boolean helpers should return true/false (not string classes)
+  - Use dash-separated attributes and class/id names in HTML
+- **CSS/SASS**:
+  - Use 2-space indentation
+  - Prefer classes over IDs (except for form inputs with labels)
+  - Use hyphen-separated names for classes/IDs
+  - Avoid global rules (scope styles to specific containers)
+  - Avoid inline styling and `!important` unless absolutely necessary
+
+## Naming Conventions
+
+- under_scored for non-functions and Blaze templates
+- lowerCamel *only* for functions and methods
+- PascalCase for classes/constructors
+- ALL_UPPER for global variables

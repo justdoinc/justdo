@@ -32,7 +32,7 @@ The installation options are as follows:
 
 ### Option 1: Quick Start With a Convenient One-Liner
 
-This is the **recommended option** for quickly evaluating JustDo under `localhost`. You can also explore a demo instance at [justdo.com](https://justdo.com). While this setup works well for local testing, it's **not** recommended for production unless properly secured. For a production-ready configuration, see [Option 2](#option-2-customized-docker-compose-setup).
+This is the **recommended option** for quickly evaluating JustDo under `localhost`. You can also explore a demo instance at [justdo.com](https://justdo.com). This setup works well for local testing. For a production-ready configuration see [Option 2](#option-2-customized-docker-compose-setup).
 
 You can copy and paste the following line into your shell for a quick setup:
 ```bash

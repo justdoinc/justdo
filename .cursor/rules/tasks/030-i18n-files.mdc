@@ -1,0 +1,97 @@
+---
+description: Guidelines for working with internationalization files in the JustDo codebase
+globs: ["**/*.i18n.json"]
+alwaysApply: false
+---
+# i18n Files Guidelines
+
+## Understanding the i18n System
+
+JustDo uses a customized internationalization (i18n) system based on Meteor's tap:i18n package, with additional tooling to manage language files across the application.
+
+## Important: File Size Limitations
+
+The JustDo i18n system uses language models (LLMs) to perform translations. Due to token limitations in these models:
+
+1. **Each i18n file should be kept under 2000 characters**
+2. **Large content must be split into multiple files** (part1, part2, etc.)
+3. **Exceeding size limits may result in incomplete or failed translations**
+
+This is why you'll see most content divided into multiple part files, especially for blog posts and feature-rich pages.
+
+## How `addI18nFiles` Works
+
+The `addI18nFiles` function is a core utility that manages language file loading in the package system. Understanding its syntax is crucial for proper i18n implementation.
+
+### Syntax
+
+```javascript
+this.addI18nFiles(api, i18n_pattern, langs);
+```
+
+- **api**: The Meteor package API object
+- **i18n_pattern**: A file path pattern with `{}` as a placeholder for the language code
+- **langs**: (Optional) Language group or array of language codes to include (defaults to "all")
+
+### Language Restriction Options
+
+When specifying which languages to include, you have several options:
+
+1. **Omit the parameter** to include all supported languages
+2. **"all"**: Include all supported languages (same as omitting)
+3. **"core"**: Include only core languages (English, Hebrew, Portuguese, Spanish, etc.)
+4. **"default_lang_only"**: Include only the default language (English)
+5. **Array of specific language codes**: e.g., `["en", "he", "pt"]`
+
+Example usage in package.js:
+
+```javascript
+// Include all supported languages
+this.addI18nFiles(api, "lib/both/i18n/part1.{}.i18n.json");
+
+// Include only the English version
+this.addI18nFiles(api, "lib/both/i18n/part1.{}.i18n.json", "default_lang_only");
+
+// Include only specific languages
+this.addI18nFiles(api, "lib/both/i18n/part1.{}.i18n.json", ["en", "he", "pt"]);
+```
+
+## i18n Configuration File
+
+Each i18n directory can include a `_i18n-conf.json` file to control language support and translation instructions.
+
+### Structure
+
+```json
+{
+  "custom_supported_langs": "core",
+  "extra_i18n_instructions": "Instructions for the translation system..."
+}
+```
+
+- **custom_supported_langs**: Controls which languages to support (overrides package.js setting)
+- **extra_i18n_instructions**: Provides specific instructions to the translation system
+
+### Example
+
+```json
+{
+  "custom_supported_langs": "core",
+  "extra_i18n_instructions": "This is a technical document. Please keep technical terms like 'API', 'Docker', etc. in their original English form."
+}
+```
+
+## Best Practices
+
+1. **Group related content** in the same file to maintain context for translators
+2. **Split large files** into logical sections (part1, part2, etc.)
+3. **Use clear key names** that describe the content they contain
+4. **Keep specialized terminology** in separate files with specific translation instructions
+5. **Regularly check the character count** of each file to ensure it stays under 2000 characters
+
+## Common Problems and Solutions
+
+1. **Missing translations**: Check if the language is included in the `addI18nFiles` call or `_i18n-conf.json`
+2. **Translation errors**: Ensure the file is under 2000 characters
+3. **Context loss**: Keep related content in the same file even if splitting into parts
+4. **Inconsistent terminology**: Use `extra_i18n_instructions` to guide translators on specialized terms

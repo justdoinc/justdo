@@ -1,0 +1,19 @@
+---
+description: Test implementation patterns and requirements
+globs: ["**/*.app-test.coffee"]
+alwaysApply: true
+---
+# Testing Guidelines
+
+## Testing Principles
+- Valid test cases will always contain the `.app-test.coffee` extension
+- When implementing tests, review the specific pattern used in similar files
+- For comprehensive test creation guidance, see the full test generation guidelines in the tasks folder
+@file .cursor/rules/tasks/010-test-generation.mdc
+
+## Test Coverage Requirements
+- All new features should have appropriate test coverage
+- Bug fixes should include regression tests to prevent recurrence
+- API changes require test updates to ensure continued functionality
+- UI components should have basic rendering and interaction tests
+- Complex business logic requires unit tests with multiple scenarios

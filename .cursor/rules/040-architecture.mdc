@@ -1,0 +1,27 @@
+---
+description: Package structure and component design principles
+globs: ["**/*.coffee", "**/*"]
+alwaysApply: true
+---
+# Architecture Guidelines
+
+## Architecture Principles
+- **Package-first**: Implement functionality as packages whenever possible
+- **Package Organization**: 
+  - Source-available packages: modules/justdo-packages (symlinked to application/packages)
+  - Proprietary packages: modules/justdo-ee-packages (symlinked to application/packages)
+- **New Packages**: Always create new packages in modules/justdo-packages (source-available)
+- **Application Code**: Only use /application folder level code when necessary - always prefer packages
+  - Place client-only code in /client, server-only in /server
+  - Use /lib only when strict load order control is needed
+
+## Package Exposures
+
+Instances of a package may be exposed to different namespaces. Examples:
+- JustdoAccounts is exposed as APP.accounts
+- JustdoSeo is exposed as APP.justdo_seo
+- JustdoHelpers is not a constructor; it is exposed globally and used as JustdoHelpers.getURL()
+- GridDataCom is constructed as part of a Project instance
+
+If a package has an app-integration.coffee file, it will typically show how the package is exposed.
+Otherwise, perform a full code search (e.g., searching for "new <constructor_name>" or one of the package methods) to determine how to correctly access the package.

@@ -1,0 +1,80 @@
+---
+description: Guidelines for how to approach tasks in the JustDo codebase
+globs: ["**/*"]
+alwaysApply: true
+---
+# Workflow Guidelines
+
+## First Step for Any Task
+- Before starting work on any task, always check the `.cursor/rules/tasks` directory for relevant guidance
+- Look for files matching your task type (e.g., `blog-posts.md` for blog creation)
+- These documents contain established workflows, conventions, and requirements specific to each task type
+- Following these task-specific rules will ensure consistency and reduce rework
+- If multiple rule files seem relevant, review all of them before proceeding
+
+## Development Environment Requirements
+- All bash scripts in this repository require Bash 5+ to run correctly
+- Different platforms have different default bash versions and installation methods
+- **All new scripts must use `#!/usr/bin/env bash` as their shebang line** for cross-platform compatibility
+
+### macOS
+- The default `/bin/bash` is version 3.2, which won't work with our scripts
+- Install a newer version of bash using Homebrew: `brew install bash`
+- When running scripts manually, use: `/opt/homebrew/bin/bash ./script.bash`
+- Or set PATH to prefer the Homebrew version: `PATH="/opt/homebrew/bin:$PATH" ./script.bash`
+
+### Linux
+- Modern Linux distributions often ship with Bash 5+ by default
+- Check your bash version with: `bash --version`
+- If needed, update bash using your distribution's package manager:
+  - Debian/Ubuntu: `sudo apt-get install -y bash`
+  - RHEL/Fedora: `sudo dnf install -y bash`
+- Run scripts using the system bash: `bash ./script.bash`
+
+### Key Bash 5+ Features Used
+- Associative arrays (`declare -A`)
+- Name references (`local -n`)
+- Parameter transformation (`${var^}` for uppercase first character)
+- Other modern bash syntax features
+
+### Enforcing Bash 5+ Usage
+
+To ensure scripts consistently use Bash 5+, you can take these steps:
+
+1. **Update shebang lines** to use the env approach, which is cross-platform compatible:
+   ```bash
+   # Use find and sed to update shebangs
+   find . -name "*.bash" -type f -exec sed -i 's|^#!/bin/bash|#!/usr/bin/env bash|g' {} \;
+   ```
+
+2. **Use env to respect PATH** when calling bash scripts:
+   ```bash
+   # macOS with Homebrew
+   PATH="/opt/homebrew/bin:$PATH" ./development-helpers.bash update-open-source
+   
+   # Linux (if bash 5+ is not the default)
+   PATH="/path/to/bash5/bin:$PATH" ./development-helpers.bash update-open-source
+   ```
+
+3. **Add version check** at the start of important scripts:
+   ```bash
+   if [ "${BASH_VERSINFO[0]}" -lt 5 ]; then
+     echo "This script requires Bash 5 or later"
+     echo "Current version: $BASH_VERSION"
+     echo "Try running with Bash 5+"
+     exit 1
+   fi
+   ```
+
+## Last Step for Any Task
+- If you've learned new concepts, workflows, or best practices during task completion, suggest updates to the relevant rules
+- For new workflows that aren't covered by existing rules, suggest creating a new rule file
+- Evaluate whether tests should be added for your changes:
+  - For functional code, new features, API changes, or bug fixes, tests are essential
+  - For content-only changes (like blog posts) or documentation updates, tests are typically not required
+  - When in doubt, err on the side of adding tests - they provide long-term stability and prevent regressions
+- Always run appropriate tests before considering a task complete:
+  - For localized changes, run related tests with `MOCHA_GREP="/relevant_pattern/i" ./test-dev-environment.bash --once`
+  - For significant changes, run the full test suite with `./test-dev-environment.bash --once`
+  - Verify that no regressions are introduced by your changes
+

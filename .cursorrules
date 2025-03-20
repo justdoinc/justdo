@@ -1,0 +1,50 @@
+# Cursor Rules Documentation
+
+This file serves as both documentation for the `.cursor/rules` directory structure and for backward compatibility with the legacy `.cursorrules` approach. It also serves as an entrypoint for CLAUDE.md or other AI tools to understand the .cursor/rules folder that is the main agents knowledge base.
+
+## Structure of `.cursor/rules`
+
+Rules in the `.cursor/rules` directory follow this structure:
+
+- File extension: `.mdc`
+- File format: Markdown with YAML frontmatter
+
+### Frontmatter Structure
+
+Each rule file has a YAML frontmatter section at the top with these properties:
+
+```yaml
+---
+description: Brief description of what the rule does
+globs: ["**/*.js", "**/*.ts"] # File patterns this rule applies to
+alwaysApply: true # Whether this rule should always be applied regardless of file context
+---
+```
+
+### Rule Content
+
+After the frontmatter, the main content is markdown:
+
+```markdown
+# Your rule title
+
+- You can reference other files using @file syntax
+- You can organize rules by purpose (e.g., standards, workflows)
+- Rules can contain code examples, guidelines, or architectural decisions
+```
+
+## Organization
+
+Rules are organized in the `.cursor/rules` directory:
+- Task-specific rules should be placed in `.cursor/rules/tasks/`
+- General rules can be placed directly in `.cursor/rules/`
+
+## How Rules Are Applied
+
+1. Rules matching the current file(s) via glob patterns are automatically included
+2. Rules with `alwaysApply: true` are included in all contexts
+3. When referencing a file that matches a rule, that rule is included as context
+
+## Creating New Rules
+
+Use the command palette (Cmd + Shift + P) > New Cursor Rule to create a new rule file with the proper structure. 
