@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+
+#
+# IMPORTANT!!! INTENDED TO BE USED BY justdo only!
+#
+
+# Parse command line arguments
+run_once="false"
+
+for arg in "$@"; do
+    if [[ "$arg" == "--once" ]]; then
+        run_once="true"
+    fi
+done
+
+APP_PATHS=(
+    "justdo-web-app-ce/application"
+    "justdo-landing-app-ce/application"
+)
+PACKAGES_SUBDIR="packages" # Relative to the app's dir
+TEST_CASES_SUBDIR="app-tests" # Relative to the app's dir
+
+# Define the cleanup function to remove symlinks when script exits
+# We are considering symlinks as auto-generated files, hence we clean them up on exit
+# and upon rebuilding the test environment.
+# Note that non-symlinks, are considered as permanent files, and are not removed (they are basically
+# actual app level tests and not packages tests).
+cleanup() {
+    local app_path
+    
+    for app_path in "${APP_PATHS[@]}"; do
+        if [ -d "$app_path/$TEST_CASES_SUBDIR" ]; then
+            (cd "$app_path" && platformFind "$TEST_CASES_SUBDIR" -type l -exec rm -f {} \; 2>/dev/null)
+        fi
+    done
+}
+
+initial_node_pids=$(pgrep -x node)
+cleanPids(){
+  sleep 3 # Wait for the processes to start, for case break was triggered very early on
+
+  local current_node_pids=$(pgrep -x node)
+  local pid
+
+  for pid in "$current_node_pids"; do
+    if [[ ! " $initial_node_pids " =~ " $pid " ]]; then
+      kill -9 $pid
+    fi
+  done
+}
+
+exitProcedures(){
+    announceStep "Cleaning up..."
+    cleanup
+    cleanPids
+}
+
+# Set up the trap to call cleanup function on script exit (for any reason)
+trap exitProcedures EXIT
+
+# Ensure the test directories exist and symlink test files from packages
+for app_path in "${APP_PATHS[@]}"; do
+    pushd "$app_path"
+      announceMainStep "Processing app: $app_path"
+      
+      # Ensure TEST_CASES_SUBDIR exists
+      mkdir -p "$TEST_CASES_SUBDIR"
+      
+      # Clean up existing symlinks, but preserve regular files
+      cleanup
+      
+      # Find test files in packages and create symlinks in TEST_CASES_SUBDIR
+      announceStep "Searching for test files in $PACKAGES_SUBDIR"
+      
+      # Check if PACKAGES_SUBDIR exists
+      if [ ! -d "$PACKAGES_SUBDIR" ]; then
+          announceError "Packages directory not found: $PACKAGES_SUBDIR"
+          popd
+          continue
+      fi
+      
+      announceStep "Searching for test files in $PACKAGES_SUBDIR"
+      # Find test files in packages and create symlinks in TEST_CASES_SUBDIR
+      # Using find with the -L flag to follow symlinks
+      platformFind -L "$PACKAGES_SUBDIR" -type f \( -name "*.app-test.*" -o -name "*.app-tests.*" \) | while read -r test_file; do
+          # Skip if test_file is empty
+          if [ -z "$test_file" ]; then
+              announceError "Warning: Empty test file path detected, skipping"
+              continue
+          fi
+          
+          # Extract the package name (first directory after PACKAGES_SUBDIR)
+          rel_path=${test_file#"$PACKAGES_SUBDIR/"}
+          package_name="$(echo "$rel_path" | cut -d'/' -f1)"
+          
+          # Check if package name was successfully extracted
+          if [ -z "$package_name" ]; then
+              announceError "Warning: Could not determine package name for $test_file, skipping"
+              continue
+          fi
+          
+          # If the package is a symlink, resolve its actual name
+          package_path="$PACKAGES_SUBDIR/$package_name"
+          if [ -L "$package_path" ]; then
+              # Get the name of the directory the symlink points to
+              # Use platformReadlink for cross-platform compatibility
+              linked_dir="$(platformReadlink -f "$package_path" 2>/dev/null || readlink "$package_path")"
+              if [ -n "$linked_dir" ]; then
+                  package_name="$(basename "$linked_dir")"
+              fi
+          fi
+          
+          # Determine if the file is for client, server, or both
+          if [[ "$test_file" == *"server"* ]]; then
+              target_dir="server"
+          elif [[ "$test_file" == *"client"* ]]; then
+              target_dir="client"
+          else
+              target_dir="both"
+          fi
+          
+          # Create the package-specific directory structure
+          package_target_dir="$TEST_CASES_SUBDIR/$package_name/$target_dir"
+          mkdir -p "$package_target_dir"
+          
+          # Get the test file name without the path
+          test_file_name="$(basename "$test_file")"
+          
+          # Create symlink (overwrite if exists)
+          echo "Creating symlink for: $test_file in $package_name/$target_dir"
+          ln -sf "$(pwd)/$test_file" "$package_target_dir/$test_file_name"
+      done
+        
+    popd 
+done
+
+announceMainStep "Test directories prepared and test files symlinked"
+
+# Set TEST_MODE to true and pass the --once flag if specified
+if [[ "$run_once" == "true" ]]; then
+    announceStep "Running tests in --once mode (tests will exit after completion)"
+fi
+TEST_MODE="true" TEST_RUN_ONCE="$run_once" . "utils/run-justdo"

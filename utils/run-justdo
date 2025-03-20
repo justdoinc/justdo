@@ -57,6 +57,14 @@
 #                       At the moment, only one environment can run with the
 #                       debug command. Leave unset/empty/with any other value
 #                       will have no effect.
+# * TEST_MODE - Set to "true" if you want us to run the meteor command for the
+#               web-app and landing-app with the test command.
+# * MOCHA_GREP - When TEST_MODE is "true", you can set MOCHA_GREP to a pattern to filter
+#                the tests to run by their name. For example: MOCHA_GREP="/my test/i" will
+#                only run tests with "my test" in their name.
+# * TEST_RUN_ONCE - When TEST_MODE is "true", setting this to "true" will run tests with
+#                   the --once flag, causing the test process to exit after completion.
+# 
 
 # Examples:
 #
@@ -245,6 +253,15 @@ startMeteor () {
         extra_args+=(debug)
     fi
 
+    if [[ "$TEST_MODE" == "true" ]]; then
+        extra_args+=(test --full-app --driver-package meteortesting:mocha)
+        
+        # Add --once flag if TEST_RUN_ONCE is set to true
+        if [[ "$TEST_RUN_ONCE" == "true" ]]; then
+            extra_args+=(--once)
+        fi
+    fi
+
     if [[ "$BUNDLE_VISUALIZER" == "true" ]]; then
         extra_args+=(--extra-packages bundle-visualizer --production)
     fi
@@ -286,7 +303,7 @@ landing_app_external_meteor_port="${LANDING_APP_EXTERNAL_PORT:-"$landing_app_met
     export HOST_DOMAIN="$WEB_APP_HOSTNAME"
     export MAX_OLD_SPACE_SIZE="$WEB_APP_NODE_MAX_OLD_SPACE_SIZE"
 
-    if [[ "$DEBUG_ENVIRONMENT" == "landing-app" ]]; then
+    if [[ "$DEBUG_ENVIRONMENT" == "web-app" ]]; then
         export DEBUG_MODE="true"
     fi
 
@@ -334,7 +351,7 @@ announceStep "Web app ready, initiating landing app"
     export HOST_DOMAIN="$LANDING_APP_HOSTNAME"
     export MAX_OLD_SPACE_SIZE="$LANDING_APP_NODE_MAX_OLD_SPACE_SIZE"
 
-    if [[ "$DEBUG_ENVIRONMENT" == "web-app" ]]; then
+    if [[ "$DEBUG_ENVIRONMENT" == "landing-app" ]]; then
         export DEBUG_MODE="true"
     fi
 
