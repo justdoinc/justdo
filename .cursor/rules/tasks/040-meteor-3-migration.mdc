@@ -1,6 +1,6 @@
 ---
-description: Guidelines for converting MongoDB collection methods to their async equivalents
-globs: ["**/*.coffee", "**/*.js", "**/package.js", "**/methods.js", "**/methods.coffee"]
+description: When user prompt includes request to migrate to Meteor 3
+globs: 
 alwaysApply: false
 ---
 # Meteor 3 Migration Guidelines
@@ -16,7 +16,7 @@ alwaysApply: false
    - upsert() → await upsertAsync()
    - find().count() → await find().countAsync()
 
-2. Add 'await' before each async call
+2. Add 'await' before each async call. Do not use Promise.await.
 
 3. For CoffeeScript in Meteor:
    - DO NOT add the 'async' keyword to functions - CoffeeScript automatically adds it when compiling
@@ -58,11 +58,11 @@ alwaysApply: false
 ## Testing
 
 8. Testing the implementation:
-   - Start dev environment: `cd ../../../justdo && ./run-dev-environment.bash`
-   - Run tests: `cd ../../../justdo && ./test-dev-environment.bash`
-   - Run tests and exit after completion: `cd ../../../justdo && ./test-dev-environment.bash --once`
-   - Run a specific test: `cd ../../../justdo && MOCHA_GREP="/test pattern/i" ./test-dev-environment.bash`
-   - Run a specific test and exit after completion: `cd ../../../justdo && MOCHA_GREP="/test pattern/i" ./test-dev-environment.bash --once`
+   - Start dev environment: `./run-dev-environment.bash`
+   - Run tests: `./test-dev-environment.bash`
+   - Run tests and exit after completion: `./test-dev-environment.bash --once`
+   - Run a specific test: `MOCHA_GREP="/test pattern/i" ./test-dev-environment.bash`
+   - Run a specific test and exit after completion: `MOCHA_GREP="/test pattern/i" ./test-dev-environment.bash --once`
    - For testing async/await changes specifically, watch for:
      - Promise rejection warnings in the console
      - Tests that pass but should fail (error handling issues)

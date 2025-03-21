@@ -1,6 +1,6 @@
 ---
-description: Guidelines for working with internationalization files in the JustDo codebase
-globs: ["**/*.i18n.json"]
+description: 
+globs: *.i18n.json,_i18n-conf.json,project-tap.i18n
 alwaysApply: false
 ---
 # i18n Files Guidelines

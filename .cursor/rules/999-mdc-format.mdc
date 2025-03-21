@@ -1,7 +1,7 @@
 ---
-description: Guidelines for creating and managing MDC format files in Cursor
-globs: ["**/*.mdc"]
-alwaysApply: true
+description: 
+globs: *.mdc
+alwaysApply: false
 ---
 # MDC File Format Guide
 
@@ -11,34 +11,96 @@ MDC (Markdown Configuration) files are used by Cursor to provide context-specifi
 
 Each MDC file consists of two main parts:
 
-1. **YAML Frontmatter** - Configuration metadata at the top of the file
+1. **Frontmatter** - Configuration metadata at the top of the file
 2. **Markdown Content** - The actual instructions in Markdown format
 
-### YAML Frontmatter
+### Frontmatter
 
-The frontmatter must be the first thing in the file and must be enclosed between triple-dash lines (`---`):
+The frontmatter must be the first thing in the file and must be enclosed between triple-dash lines (`---`). You should only set one field at a time based on the behavior pattern you want:
 
-```yaml
+```
 ---
+# Choose only ONE of these three patterns:
+
+# Pattern 1: Description-based rule
 description: Brief description of what the rule does
-globs: ["**/*.js", "**/*.ts"]  # File patterns this rule applies to
-alwaysApply: false  # Whether this rule should always be applied
+globs: 
+alwaysApply: false
+
+# OR Pattern 2: File-specific rule
+# description: 
+# globs: **/*.js, **/*.ts  # Comma-separated list, not an array
+# alwaysApply: false
+
+# OR Pattern 3: Always-apply rule
+# description: 
+# globs: 
+# alwaysApply: true
 ---
 ```
 
-#### Required Fields
+> **Important**: Despite the appearance, the frontmatter is not strictly YAML formatted. The `globs` field is a comma-separated list and should NOT include brackets `[]` or quotes `"`.
 
-- `description`: A concise explanation of what the rule provides
-- `globs`: Array of glob patterns defining which files this rule applies to
+#### Supported Fields
+
+There are three main fields, but you should only set one of them at a time to create specific behavior patterns:
+
+- `description`: A concise explanation of what the rule provides (used by AI to determine relevance)
+- `globs`: Comma-separated list of glob patterns defining which files this rule applies to
 - `alwaysApply`: Boolean indicating if the rule should be applied regardless of file context
+
+#### Behavior Patterns
+
+Each pattern serves a different purpose and only one field should be set at a time:
+
+1. **Always Apply Rule**: 
+   ```
+   ---
+   description: 
+   globs: 
+   alwaysApply: true
+   ---
+   ```
+   Rule will always be included in the context regardless of file or query.
+
+2. **File-Specific Rule**: 
+   ```
+   ---
+   description: 
+   globs: **/*.js, **/*.ts
+   alwaysApply: false
+   ---
+   ```
+   Rule applies only when matching files are mentioned or opened.
+
+3. **Description-Based Rule**: 
+   ```
+   ---
+   description: Guidelines for handling authentication
+   globs: 
+   alwaysApply: false
+   ---
+   ```
+   AI decides relevance based on the description and query context.
+
+4. **Reference-Only Rule**: 
+   ```
+   ---
+   description: 
+   globs: 
+   alwaysApply: false
+   ---
+   ```
+   Only applied when explicitly referenced from another rule or query.
 
 #### Glob Pattern Examples
 
-- `"**/*"` - All files (use sparingly with `alwaysApply: false`)
-- `"**/*.js"` - All JavaScript files
-- `"**/*.{js,ts}"` - All JavaScript and TypeScript files
-- `"src/**/*.jsx"` - All JSX files in the src directory
-- `"**/components/**/*.vue"` - All Vue files in any components directory
+- **/*.js - All JavaScript files
+- src/**/*.{js,ts} - All JavaScript and TypeScript files in the src directory
+- src/**/*.jsx - All JSX files in the src directory
+- **/components/**/*.vue - All Vue files in any components directory
+
+> **Note**: Currently, you cannot combine glob patterns with curly braces across different directory patterns.
 
 ### Markdown Content
 
@@ -59,7 +121,11 @@ More detailed information...
 
 ### File References
 
-You can reference other files from within an MDC file using the `@file` syntax.
+You can reference other files from within an MDC file using the markdown link syntax:
+
+```
+[rule-name.mdc](mdc:location/of/the/rule.mdc)
+```
 
 When this rule is activated, the referenced file will also be included in the context.
 
@@ -96,7 +162,7 @@ function example() {
 
 4. **File Size Considerations**
    - Keep files focused on a single topic or closely related topics
-   - Split very large rule sets into multiple files and link them with `@file` references
+   - Split very large rule sets into multiple files and link them with references
    - Aim for under 300 lines per file when possible
 
 ## Usage in Cursor
@@ -115,7 +181,7 @@ When a rule file is added/renamed/removed, update also the list under 010-workfl
 
 When updating existing rules:
 
-1. Maintain the YAML frontmatter format
+1. Maintain the frontmatter format
 2. Keep the same glob patterns unless intentionally changing the rule's scope
 3. Update the description if the purpose of the rule changes
 4. Consider whether changes should propagate to related rules (e.g., CE versions)

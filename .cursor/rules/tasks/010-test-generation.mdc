@@ -1,6 +1,6 @@
 ---
-description: Detailed guidance for creating comprehensive tests in the JustDo codebase
-globs: ["**/*.app-test.coffee", "**/*.test.coffee", "**/*.test.js", "**/tests/**/*"]
+description: When the user prompt asks to generate or update test files
+globs: 
 alwaysApply: false
 ---
 # Test Generation Guidelines

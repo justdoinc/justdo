@@ -1,0 +1,67 @@
+---
+description: 
+globs: *.bash,*.sh
+alwaysApply: false
+---
+# Bash Development Guidelines
+
+## Bash Scripting Conventions
+
+- **Preferred Shell Language**:
+  - Bash is the preferred shell scripting language for all scripts in this repository
+  - Always use Bash instead of other shells (sh, zsh, fish, etc.) for new scripts
+  - Existing scripts in other shells should be migrated to Bash when possible
+
+- **Shebang Line**:
+  - All Bash scripts must use `#!/usr/bin/env bash` as the shebang line
+  - Never use `#!/bin/bash` as it is not portable across systems
+  - The env-based shebang allows the script to use the bash version found in PATH
+  - This is especially important for cross-platform compatibility (macOS/Linux)
+
+- **Variable Naming**:
+  - Use lowercase for regular variables: `package_name`, `file_path`, `current_dir`
+  - Use UPPERCASE only for constants and environment variables: `APP_VERSION`, `NODE_ENV`
+  - Example: `package_name="$(echo "$rel_path" | cut -d'/' -f1)"` (not `PACKAGE_NAME=...`)
+
+- **Parameter Quoting**:
+  - Always double-quote variable references: `"$variable"` (not `$variable`)
+  - Double-quote command substitutions: `"$(command)"` (not `$(command)`)
+  - This prevents word splitting and unexpected behavior with spaces/special characters
+  - Example: `if [[ -n "$package_name" ]]; then` (not `if [[ -n $package_name ]]; then`)
+
+## Using Bash Helpers
+
+- Always leverage the `helpers` directory (symlink to `modules/bash-helpers/functions`) for common operations
+- This promotes code reuse and consistency across all bash scripts in the project
+- Most main bash utilities implemented in this project load all helpers by default
+- Rather than copy-pasting code between scripts, use or extend these helpers
+
+## Adding New Helper Functions
+
+- If you find yourself writing the same bash function multiple times across different scripts, it should be added to the bash-helpers repository
+- Follow these steps to add a new helper:
+  1. Implement and test the function in your current script first
+  2. Once working correctly, move it to an appropriate file in `modules/bash-helpers/functions`
+  3. Group related functions together in topic-specific files
+  4. Add documentation comments above the function
+  5. Update your original script to use the new helper
+
+## Helpers Organization
+
+- Related helper functions are grouped in specific files by domain/purpose
+- All helpers follow consistent naming and parameter passing conventions
+- Helper functions include inline documentation explaining:
+  - Purpose and usage
+  - Parameters (with types and default values if applicable)
+  - Return values or side effects
+  - Examples of typical usage
+
+## DRY Principles
+
+- Never duplicate bash code across multiple scripts
+- When you identify repeated code patterns, extract them to helper functions
+- Functions in the bash-helpers repository should be:
+  - Well-named and focused on a single responsibility
+  - Properly documented with usage examples
+  - Tested for edge cases
+  - Designed to be reusable across multiple contexts

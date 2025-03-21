@@ -1,53 +1,28 @@
 ---
-description: Repository organization and relationships in the JustDo codebase
-globs: ["**/*"]
+description: 
+globs: 
 alwaysApply: true
 ---
-# Project Structure Guidelines
 
 ## Codebase Structure
-- `justdo`: Project root repository containing the run/test scripts
-- `justdo-landing-app`: Landing app repository (submodule at `justdo/nodes/justdo-web-landing-app/justdo-landing-app`)
-  - This is the main/closed-source/proprietary version
-- `justdo-web-app`: Web app repository (submodule at `justdo/nodes/justdo-web-app/justdo-web-app`)
-  - This is the main/closed-source/proprietary version
-  - Includes all Enterprise Edition features
-- `justdo-ce`: Community Edition repository (located at `justdo/modules/justdo-ce`)
-  - Contains open-source versions of the web app and landing app
-  - Modified copies of selected files from the main repositories
-  - Has its own versions of submodules (justdo-web-app-ce, justdo-landing-app-ce)
-  - Only has access to `justdo-packages` submodule, not `justdo-ee-packages` or `justdo-bespoke-packages`
-  - Each CE app submodule (justdo-web-app-ce/justdo-landing-app-ce) contains its own copy of the justdo-packages submodule
-  - Lacks Enterprise Edition features, those features are typically the packages under the justdo-ee-packages repository
-  - Note: The terms "CE", "source available", and "open source" are used interchangeably to refer to the Community Edition. For example, "rebuild open source" means to rebuild the CE repository.
-- Both `justdo-landing-app` and `justdo-web-app` repositories have git submodules under their respective `modules` directories:
+- `justdo`: Project root repository (the Community Edition)
+- `modules/justdo-web-app-ce`: Web app CE repository 
+- `modules/justdo-landing-app-ce`: Landing app CE repository
+- Both app repositories have git submodules under their respective `modules` directories:
   - `modules/justdo-packages`: Source-available packages
-  - `modules/justdo-ee-packages`: Enterprise edition/proprietary packages
-    - Contains premium features only available in the closed-source version
-    - Includes integrations like Google Docs, Zendesk, Azure Active Directory, etc.
-    - Not available in the Community Edition
-  - `modules/justdo-bespoke-packages`: Client-specific customizations
-    - Contains packages tailored specifically for individual clients
-    - Only included in build/plugins folder of specific client environments
-    - Not symlinked to application/packages like other package types
-    - Currently only used in justdo-web-app (not justdo-landing-app)
-    - Deployment is controlled through client-specific environment configurations
-- Note that both `justdo-landing-app` and `justdo-web-app` reference the same git submodules, but may point to different commits
-- When working on web app features, modify the submodules in `justdo-web-app`
-- When working on landing page features, modify the submodules in `justdo-landing-app`
-- Only update both submodules when explicitly requested by the user (typically for API changes that need to be tested consistently across both apps)
-- When in doubt about which submodule should be updated, always ask the user for clarification
-
-## Version Terminology Clarification
-- "Closed source" or "proprietary" version: The main version at `nodes/justdo-web-app/justdo-web-app` and `nodes/justdo-web-landing-app/justdo-landing-app` with all features
-- "Open source", "CE", or "Community Edition": The limited version at `modules/justdo-ce` without EE packages
-- **Default assumption**: When no version is explicitly specified, assume references are to the closed source/proprietary version
+  - `modules/bash-helpers`: Git submodule containing bash helper functions
+    - Contains reusable bash functions used by both CE and closed-source versions
+    - A symlink exists at the repository root: `helpers -> modules/bash-helpers/functions`
+    - This symlink structure is identical in both CE and closed-source repositories
+- Note that both app repositories reference the same git submodules, but may point to different commits
+- When working on web app features, modify the submodules in `justdo-web-app-ce`
+- When working on landing page features, modify the submodules in `justdo-landing-app-ce`
 
 ## Commands
-- (The following bash scripts exists in the project root of `justdo`. If the current pwd is different, ensure to `cd` back to `justdo`)
+- (The following bash scripts exists in the project root. If the current pwd is different, ensure to `cd` back to the root directory)
 - Start dev environment: `./run-dev-environment.bash`
 - Run full app tests: `./test-dev-environment.bash`
 - Run tests and exit after completion: `./test-dev-environment.bash --once`
 - Run a subset of tests: `MOCHA_GREP="<regex_pattern_matching_test_suite>" ./test-dev-environment.bash --once`
   - For example, to run tests with `describe "*+grid*+"` (name of suite containing grid), use `MOCHA_GREP="/grid/i"`
-- Build for production: Handled by CI/CD pipeline in justdo
+- Build for production: Handled by CI/CD pipeline

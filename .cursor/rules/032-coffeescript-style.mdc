@@ -1,0 +1,46 @@
+---
+description: 
+globs: **/*.coffee
+alwaysApply: false
+---
+# CoffeeScript Coding Style Guidelines
+
+## Core Philosophy
+
+- Code is primarily written for humans to read and understand, not just for computers to execute
+- "Explicit is better than implicit. Simple is better than complex. Readability counts."
+- Maintain consistency with existing code style when modifying files
+- Keep code DRY (Don't Repeat Yourself)
+- Prefer verbose variable names and maintainability over concise code
+- Perform computations on client when possible, not server-side
+- Avoid whole-database caching on server instances (use infrastructure-level caching if needed)
+
+## CoffeeScript Rules
+
+- **Runtime**: Node.js v14 - use compatible syntax (no optional chaining, nullish coalescing)
+- Omit parentheses for empty argument lists: `a = -> true` instead of `a = () -> true`
+- Use dot notation for object properties: `obj.prop` instead of `obj["prop"]`
+- Always include explicit `return` except in one-liners
+- Don't wrap if conditions in parentheses: `if x` instead of `if (x)`
+- Use double quotes `"` instead of single quotes
+- Use triple double quotes `"""` for multiline strings and HTML content
+
+## Security Guidelines
+
+- Always use `xssGuard` helper with triple braces: `{{{xssGuard content}}}` instead of `{{{content}}}`
+
+## Database Guidelines
+
+- Collection names: under_scored (plugins add short prefix, e.g., `meetings_`)
+- Field names: under_scored
+- Always specify `fields` option in all queries (find/findOne/etc.)
+- Request only the minimum fields needed
+- Use `{fields: undefined}` explicitly when all fields are required
+- Ensure proper indexes are in place for all queries
+
+## Naming Conventions
+
+- under_scored for non-functions and Blaze templates
+- lowerCamel *only* for functions and methods
+- PascalCase for classes/constructors
+- ALL_UPPER for global variables 

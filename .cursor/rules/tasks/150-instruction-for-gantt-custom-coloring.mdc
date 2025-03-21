@@ -1,0 +1,168 @@
+---
+description: Gantt custom coloring implemented in justdo-planning-utilities package
+globs: 
+alwaysApply: false
+---
+# Gantt Chart Custom Coloring
+
+This document explains how to use the custom coloring API for gantt charts in the Planning Utilities module.
+
+## Overview
+
+The custom coloring API allows developers to specify condition-based colors for Gantt chart task bars. This is useful for visually encoding additional information beyond the default coloring scheme (which only differentiates critical path tasks).
+
+## API
+
+The Planning Utilities module provides the following methods for custom coloring:
+
+### `registerGanttColorCondition(condition_id, condition_func)`
+
+Register a condition function that determines task bar colors.
+
+**Parameters:**
+- `condition_id`: String identifier for the condition (used for unregistering and debugging)
+- `condition_func`: Function that takes a task document and returns a color object or undefined
+
+**Color Object Format:**
+```coffeescript
+{
+  background: "#hex_color"  # Background color (hex format) 
+  border: "#hex_color"      # Border color (hex format)
+  alpha: 0.5                # Optional transparency (0-1)
+}
+```
+
+If the condition function returns `undefined`, default coloring will be used.
+
+### `unregisterGanttColorCondition(condition_id)`
+
+Remove a previously registered condition function.
+
+**Parameters:**
+- `condition_id`: The string identifier of the condition to remove
+
+## Usage Examples
+
+### Basic Example
+
+This example colors all task bars for tasks in the "Design" category blue:
+
+```coffeescript
+APP.justdo_planning_utilities.registerGanttColorCondition "design_category_color", (task) ->
+  if task.categories? and "Design" in task.categories
+    return {
+      background: "#3498db"
+      border: "#2980b9"
+    }
+  return
+```
+
+### Project-Specific Coloring
+
+This example applies a color scheme only to specific projects by checking the project ID inside the condition function:
+
+```coffeescript
+APP.justdo_planning_utilities.registerGanttColorCondition "blocked_tasks_color", (task) ->
+  # Only apply to specific projects
+  project_ids = ["project_id_1", "project_id_2"]
+  
+  if task.project_id in project_ids and task.state is "blocked"
+    return {
+      background: "#e74c3c"
+      border: "#c0392b"
+      alpha: 0.8
+    }
+  return
+```
+
+### Priority-Based Coloring
+
+This example colors tasks based on their priority:
+
+```coffeescript
+APP.justdo_planning_utilities.registerGanttColorCondition "priority_colors", (task) ->
+  switch task.priority
+    when "high"
+      return {
+        background: "#e74c3c"
+        border: "#c0392b"
+      }
+    when "medium"
+      return {
+        background: "#f39c12"
+        border: "#d35400"
+      }
+    when "low"
+      return {
+        background: "#2ecc71"
+        border: "#27ae60"
+      }
+    else
+      return
+```
+
+### Progress-Based Color Intensity
+
+This example changes the alpha (transparency) based on task progress:
+
+```coffeescript
+APP.justdo_planning_utilities.registerGanttColorCondition "progress_intensity", (task) ->
+  # Get progress percentage
+  progress = task[JustdoPlanningUtilities.progress_percentage_pseudo_field_id] or 0
+  
+  # Skip if task has no progress
+  if progress is 0
+    return
+  
+  # Calculate alpha - ranges from 0.3 (0% complete) to 1.0 (100% complete)
+  alpha = 0.3 + (progress / 100) * 0.7
+  
+  return {
+    background: "#3498db"
+    border: "#2980b9"
+    alpha: alpha
+  }
+```
+
+## Multiple Conditions
+
+When multiple condition functions are registered, they are evaluated in no specific order. The first function that returns a color object will be used, and subsequent functions will be skipped.
+
+If you need a specific evaluation order, consider creating a single condition function that applies multiple conditions in the desired order.
+
+## Browser Support
+
+The alpha transparency feature uses RGBA colors, which are supported in all modern browsers.
+
+## Performance Considerations
+
+Condition functions are called frequently during rendering, so they should be kept simple and efficient. Avoid expensive operations like database queries inside condition functions.
+
+## Color Helper Functions
+- Use camelCase for function and variable names (e.g., `hexToRgb`, `applyCustomColors`)
+- Centralize color conversion and manipulation in helper functions
+- Include functions for:
+  - Converting hex colors to RGB for RGBA use
+  - Darkening and lightening colors by percentage
+  - Applying custom colors with flexible options
+
+## Custom Color Application
+- Use the `applyCustomColors` helper for consistent styling
+- Always check if custom colors exist before applying them
+- Pass options object for styling variations:
+  - `bg_alpha_modifier`: Adjusts transparency of background
+  - `border_alpha_modifier`: Adjusts transparency of border
+  - `lighten_bg_percent`: Percentage to lighten background
+  - `darken_bg_percent`: Percentage to darken background
+
+## Condition Examples
+- Priority-based coloring
+- Progress-based transparency
+- Past due date highlighting (for in-progress/pending tasks)
+- Alternating colors based on sequence IDs
+- Buffer task styling
+
+## Best Practices
+- Ensure colors have sufficient contrast for accessibility
+- Use alpha channels for subtle visual hierarchy
+- Test color schemes with different task states and progress values 

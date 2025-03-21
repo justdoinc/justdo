@@ -1,7 +1,7 @@
 ---
-description: Test implementation patterns and requirements
-globs: ["**/*.app-test.coffee"]
-alwaysApply: true
+description: When the user prompt includes "test"
+globs: 
+alwaysApply: false
 ---
 # Testing Guidelines
 
@@ -9,7 +9,7 @@ alwaysApply: true
 - Valid test cases will always contain the `.app-test.coffee` extension
 - When implementing tests, review the specific pattern used in similar files
 - For comprehensive test creation guidance, see the full test generation guidelines in the tasks folder
-@file .cursor/rules/tasks/010-test-generation.mdc
+[010-test-generation.mdc](mdc:.cursor/rules/tasks/010-test-generation.mdc)
 
 ## Test Coverage Requirements
 - All new features should have appropriate test coverage

@@ -1,6 +1,6 @@
 ---
-description: Package structure and component design principles
-globs: ["**/*.coffee", "**/*"]
+description: 
+globs: 
 alwaysApply: true
 ---
 # Architecture Guidelines

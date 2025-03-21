@@ -1,0 +1,185 @@
+---
+description: Guidelines for implementing language-specific routes in the JustDo codebase
+globs: 
+alwaysApply: false
+---
+
+# Language-Specific Routes Implementation Guidelines
+
+## Key Packages
+
+The i18n and routing functionality is spread across several packages:
+- `justdo-i18n`: Core internationalization features
+- `justdo-i18n-routes`: Handles route translation and language prefixing
+- `justdo-site-mapper`: Manages sitemap generation
+- `justdo-seo`: Handles SEO aspects including alternate language links
+- `justdo-news`: Example of content with language-specific limitations
+
+## Route Registration and Translatable Flag
+
+There are two key concepts to understand for i18n routing:
+
+1. **Route Registration**: Routes must be known to the i18n system to be handled properly
+2. **Translatable Flag**: Routes must be marked as translatable to receive language prefixes
+
+### Using `registerRoutes`
+
+The `justdo-i18n-routes` package provides a `registerRoutes` method that registers routes with both Iron Router and the i18n system:
+
+```coffeescript
+APP.justdo_i18n_routes.registerRoutes [{
+  path: "/example",
+  routingFunction: ->
+    # Route handler function
+    @render "example_template"
+  route_options: {
+    name: "example"
+    translatable: true
+  }
+}]
+```
+
+When you call `registerRoutes`:
+- The route is registered with Iron Router in the standard way
+- The route is also marked in the `i18n_routes` object maintained by the package
+- This marking makes the route **eligible** for i18n processing
+
+### The `translatable: true` Flag
+
+Setting `translatable: true` in the route options is required for a route to actually receive language-specific handling:
+
+```coffeescript
+# Standard Iron Router definition
+Router.route "/example",
+  name: "example"
+  translatable: true
+  # other options...
+```
+
+Important notes:
+- **Both mechanisms are needed**: A route registered with `registerRoutes` still needs `translatable: true` to receive language prefixes
+- **Flexibility**: You can register routes that are known to the i18n system but don't need translations yet
+- **Dynamic control**: You can easily enable/disable translations for routes by toggling the `translatable` flag
+
+### How They Work Together
+
+1. **Route Registration** (via `registerRoutes` or standard `Router.route`) makes the route known to the system
+2. **`translatable: true` Flag** enables the generation of language-specific URLs and alternate links
+3. **`getI18nKeyToDetermineSupportedLangs` Function** (optional) restricts which languages are supported
+
+## Language Support Determination
+
+The system uses a hierarchical approach to determine which languages are supported for a given route:
+
+1. Check if the route is marked as `translatable: true` (required for any i18n support)
+2. If the route provides a `getI18nKeyToDetermineSupportedLangs` function, use it to:
+   - Determine an i18n key that represents the content
+   - Check which languages have translations for that key
+3. If no key or function is provided, all supported languages are considered available
+
+## Key Functions
+
+### Client and Server Functions
+
+- **`getI18nKeyToDetermineSupportedLangFromPath(path)`**: Extracts the i18n key for a given path
+  - Removes HRP (Human Readable Parts) from the path
+  - Retrieves the route and checks if it's translatable
+  - Returns the i18n key if available
+
+### Server-Only Functions
+
+- **`getSupportedLangsForPath(path)`**: Determines which languages are supported for a path
+  - For non-translatable routes, returns only the default language
+  - For translatable routes without restrictions, returns all supported languages
+  - For routes with i18n key restrictions, returns only languages with translations
+
+### URL Generation
+
+- **`i18nPath(path, lang, options)`**: Converts a path to include language prefix when appropriate
+  - Only adds language prefix for non-default languages
+  - Only adds prefix for translatable routes
+  - Only adds prefix if the language is supported for the specific content
+  - Accepts `skip_lang_check: true` option to bypass content-specific language checks
+
+- **`i18nPathAndHrp(path, lang, options)`**: Combines i18nPath with Human Readable Parts
+
+## Implementation Example
+
+To implement language-specific routes for new content:
+
+1. Mark your route as translatable:
+
+```coffeescript
+Router.route "/example-page",
+  name: "example_page"
+  translatable: true
+  # ...other options
+```
+
+2. Add a function to determine supported languages (optional):
+
+```coffeescript
+Router.route "/example-content/:id",
+  name: "example_content"
+  translatable: true
+  getI18nKeyToDetermineSupportedLangs: (path) ->
+    # Extract content ID from path
+    matches = path.match /\/example-content\/([^\/\?]+)/
+    return null unless matches?
+    
+    content_id = matches[1]
+    # Find the content
+    content = ExampleContents.findOne {_id: content_id}, {fields: {title_i18n_key: 1}}
+    
+    # Return the i18n key that determines which languages are supported
+    return content?.title_i18n_key
+  # ...other options
+```
+
+3. Apply i18n to links:
+
+```coffeescript
+url = "/example-content/123"
+i18n_url = APP.justdo_i18n_routes.i18nPathAndHrp(url)
+```
+
+## Runtime Behavior
+
+1. When a user navigates to `/lang/zh-TW/pricing` (a fully translated page):
+   - Content is displayed in Chinese
+   - UI components (header, menu) are in Chinese
+   - Links to other translated pages maintain the `/lang/zh-TW/` prefix
+
+2. When a user with active language "zh-TW" navigates to `/terms-and-conditions` (English-only page):
+   - Content is displayed in English (default language)
+   - UI components remain in Chinese
+   - Language-specific prefix is omitted from the URL
+   - Links back to translated pages will restore the language prefix
+
+## SEO Considerations
+
+The system automatically:
+
+- Updates `<link rel="alternate" hreflang="...">` tags to only include supported languages
+- Ensures sitemap.xml only includes language variants that actually exist
+- Handles canonical URLs correctly for each language version
+
+## Troubleshooting
+
+- If language prefixes aren't being added correctly, check if the route is marked as `translatable: true`
+- If alternate links are incorrect, verify the i18n key is being returned properly
+- Server logs may show "Note: Language support for /path can't be fully determined on client side" which is expected for client-side rendering
+
+## Testing Language Support
+
+To verify language support for a specific path:
+
+```coffeescript
+# Server-side
+supported_langs = APP.justdo_i18n_routes.getSupportedLangsForPath("/example-path")
+console.log(supported_langs)
+
+# Server or client
+i18n_key = APP.justdo_i18n_routes.getI18nKeyToDetermineSupportedLangFromPath("/example-path")
+console.log(i18n_key)
+```

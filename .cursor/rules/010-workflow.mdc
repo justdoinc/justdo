@@ -1,6 +1,6 @@
 ---
-description: Guidelines for how to approach tasks in the JustDo codebase
-globs: ["**/*"]
+description: 
+globs: 
 alwaysApply: true
 ---
 # Workflow Guidelines
@@ -77,4 +77,3 @@ To ensure scripts consistently use Bash 5+, you can take these steps:
   - For localized changes, run related tests with `MOCHA_GREP="/relevant_pattern/i" ./test-dev-environment.bash --once`
   - For significant changes, run the full test suite with `./test-dev-environment.bash --once`
   - Verify that no regressions are introduced by your changes
-

@@ -1,0 +1,26 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Terminology Clarification
+
+## The Ambiguity of "Project" in JustDo
+
+- The term "project" is ambiguous in the JustDo codebase due to historical terminology changes
+- When JustDo started, **Boards** used to be called **Projects**
+- Later, we started calling these **Projects** as **JustDos**
+- Then we introduced a new concept also called **Project**, which refers to a task that is designated as a Project
+
+## Current Terminology
+
+- **Board**: A container for tasks and the current term for what was once called a Project
+- **JustDo**: The renamed term for what was originally called a Project (now a Board)
+- **Project Task**: A task that has been designated as a Project (the current meaning of "Project")
+
+## Usage Guidelines
+
+- When referring to the container for tasks, use "JustDo"
+- When referring to a task designated as a Project, use "Project" for user-facing terminology
+- Be aware that old code and documentation may use these terms inconsistently
+- Add comments when necessary to clarify ambiguous usages

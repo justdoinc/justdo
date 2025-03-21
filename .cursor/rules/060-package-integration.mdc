@@ -1,5 +1,5 @@
 ---
-description: Guidelines for verifying Meteor package integration in the JustDo codebase
+description: 
 globs: 
 alwaysApply: true
 ---
@@ -67,7 +67,7 @@ JustDo has extended the standard Meteor package.js API with custom i18n function
 3. This function helps manage language file loading across the application
 
 For detailed i18n implementation, see:
-@file .cursor/rules/tasks/030-i18n-files.mdc
+[030-i18n-files.mdc](mdc:.cursor/rules/tasks/030-i18n-files.mdc)
 
 ## Common Integration Issues
 
