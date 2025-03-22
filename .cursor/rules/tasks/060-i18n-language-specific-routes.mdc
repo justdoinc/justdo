@@ -1,5 +1,5 @@
 ---
-description: Guidelines for implementing language-specific routes in the JustDo codebase
+description: Use when information about language specific i18n routes would be helpful
 globs: 
 alwaysApply: false
 ---

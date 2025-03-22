@@ -1,7 +1,7 @@
 ---
 description: 
-globs: 
-alwaysApply: true
+globs: **/justdo-web-app*/**, **/justdo-landing-app*/**
+alwaysApply: false
 ---
 # Terminology Clarification
 

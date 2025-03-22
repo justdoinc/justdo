@@ -1,6 +1,6 @@
 ---
 description: 
-globs: *.bash,*.sh
+globs: **/*.bash,**/*.sh
 alwaysApply: false
 ---
 # Bash Development Guidelines
@@ -31,7 +31,7 @@ alwaysApply: false
 
 ## Using Bash Helpers
 
-- Always leverage the `helpers` directory (symlink to `modules/bash-helpers/functions`) for common operations
+- **Always** leverage the `helpers` directory (symlink to `modules/bash-helpers/functions`) for common operations
 - This promotes code reuse and consistency across all bash scripts in the project
 - Most main bash utilities implemented in this project load all helpers by default
 - Rather than copy-pasting code between scripts, use or extend these helpers

@@ -1,6 +1,6 @@
 ---
-description: When user prompt includes request to migrate to Meteor 3
-globs: 
+description: Use when user prompt includes request to migrate to Meteor 3
+globs: **/*.coffee,**/*.js,**/package.js,**/methods*
 alwaysApply: false
 ---
 # Meteor 3 Migration Guidelines

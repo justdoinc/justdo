@@ -7,7 +7,7 @@ alwaysApply: true
 
 ## First Step for Any Task
 - Before starting work on any task, always check the `.cursor/rules/tasks` directory for relevant guidance
-- Look for files matching your task type (e.g., `blog-posts.md` for blog creation)
+- Look for files matching your task type (e.g., `[020-blog-posts.md](mdc:.cursor/rules/tasks/020-blog-posts.md)` for blog creation)
 - These documents contain established workflows, conventions, and requirements specific to each task type
 - Following these task-specific rules will ensure consistency and reduce rework
 - If multiple rule files seem relevant, review all of them before proceeding
@@ -56,15 +56,12 @@ To ensure scripts consistently use Bash 5+, you can take these steps:
    PATH="/path/to/bash5/bin:$PATH" ./development-helpers.bash update-open-source
    ```
 
-3. **Add version check** at the start of important scripts:
+3. **Use the requireMinimumBashVersion helper** at the start of important scripts:
    ```bash
-   if [ "${BASH_VERSINFO[0]}" -lt 5 ]; then
-     echo "This script requires Bash 5 or later"
-     echo "Current version: $BASH_VERSION"
-     echo "Try running with Bash 5+"
-     exit 1
-   fi
+   requireMinimumBashVersion 5
    ```
+   
+   This helper will automatically check the Bash version and provide a helpful error message if the minimum version requirement is not met.
 
 ## Last Step for Any Task
 - If you've learned new concepts, workflows, or best practices during task completion, suggest updates to the relevant rules

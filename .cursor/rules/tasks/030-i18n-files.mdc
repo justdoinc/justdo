@@ -1,6 +1,6 @@
 ---
-description: 
-globs: *.i18n.json,_i18n-conf.json,project-tap.i18n
+description: Guidelines for working with internationalization (i18n) files
+globs: **/*.i18n.json,**/_i18n-conf.json,**/project-tap.i18n
 alwaysApply: false
 ---
 # i18n Files Guidelines

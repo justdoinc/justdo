@@ -1,5 +1,5 @@
 ---
-description: When the user prompt includes "test"
+description: Use when the user prompt includes "test"
 globs: 
 alwaysApply: false
 ---

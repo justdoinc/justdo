@@ -1,7 +1,7 @@
 ---
-description: 
-globs: 
-alwaysApply: true
+description: Package structure and component design principles
+globs: **/justdo-web-app*/**,**/justdo-landing-app*/**,**/justdo*packages/**
+alwaysApply: false
 ---
 # Architecture Guidelines
 
