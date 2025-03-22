@@ -323,3 +323,68 @@ mongo-dumps
 mongo-dumps
 
 
+# Package management directories
+**/packages
+**/.meteor
+**/node_modules
+**/.npm
+
+# Translation files (keep only English)
+*.i18n.json
+!*en.i18n.json
+
+mongo-dumps
+
+
+# Package management directories
+**/packages
+**/.meteor
+**/node_modules
+**/.npm
+
+# Translation files (keep only English)
+*.i18n.json
+!*en.i18n.json
+
+mongo-dumps
+
+
+# Package management directories
+**/packages
+**/.meteor
+**/node_modules
+**/.npm
+
+# Translation files (keep only English)
+*.i18n.json
+!*en.i18n.json
+
+mongo-dumps
+
+
+# Package management directories
+**/packages
+**/.meteor
+**/node_modules
+**/.npm
+
+# Translation files (keep only English)
+*.i18n.json
+!*en.i18n.json
+
+mongo-dumps
+
+
+# Package management directories
+**/packages
+**/.meteor
+**/node_modules
+**/.npm
+
+# Translation files (keep only English)
+*.i18n.json
+!*en.i18n.json
+
+mongo-dumps
+
+

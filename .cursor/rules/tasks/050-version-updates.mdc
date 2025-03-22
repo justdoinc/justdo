@@ -1,0 +1,162 @@
+---
+description: Guidelines for preparing the codebase for a new version release and updating changelogs
+globs: "**/Changelog"
+alwaysApply: false
+---
+
+# Version Update Guidelines
+
+This document outlines the process for preparing the codebase for a new version release, with specific focus on updating changelogs across different repositories in the JustDo ecosystem.
+
+## Overview
+
+When preparing for a new version release, we need to:
+1. Identify changes made since the last version
+2. Document these changes in appropriate changelog files
+3. Ensure consistency across repositories
+
+## Affected Repositories and Files
+
+The primary changelog files that need to be updated are:
+- Main DevOps Changelog: `/ChangeLog`
+- Web App Changelog: `/nodes/justdo-web-app/justdo-web-app/Changelog`
+- Landing App Changelog: `/nodes/justdo-web-landing-app/justdo-landing-app/Changelog`
+
+## Important Guidelines
+
+### NEVER Modify Previously Published Entries
+
+⚠️ **CRITICAL**: Never modify any content in previously published changelog entries, even for seemingly harmless formatting changes. When adding new entries, be extremely careful to:
+
+1. Only add new content at the top of the file
+2. Never change spacing, formatting, or content of existing entries
+3. Use a consistent format for the new entry that matches the existing pattern
+4. When using code editors or automated tools, verify that they haven't accidentally modified existing content
+
+This ensures the historical record remains intact and consistent.
+
+## Process
+
+### 1. Identifying the Previous Version
+
+First, identify the most recent version tag:
+
+```bash
+cd /Users/theosp/justdo
+git tag -l "v*" --sort=-v:refname | head -1
+```
+
+### 2. Comparing Changes Since Last Version
+
+To properly document all changes, you need to:
+
+#### a. Identify Submodule Commits at Previous Version Tag
+
+Check out the previous version tag and note the commit hashes for submodules:
+
+```bash
+cd /Users/theosp/justdo
+git checkout v5.x.y  # Replace with actual previous version tag
+```
+
+Note the commit hashes for:
+- Web app: `nodes/justdo-web-app/justdo-web-app`
+- Landing app: `nodes/justdo-web-landing-app/justdo-landing-app`
+- Bash helpers: `modules/bash-helpers`
+- Their respective submodules (packages, ee-packages, etc.)
+
+#### b. Compare Direct Changes in Main Repositories
+
+For both web app and landing app repositories, compare changes between the previously tagged commit and current HEAD:
+
+```bash
+cd /Users/theosp/justdo/nodes/justdo-web-app/justdo-web-app
+git log --pretty=format:"%h %s" <old-commit-hash>..HEAD
+```
+
+Replace `<old-commit-hash>` with the actual commit hash from the previous version tag.
+
+#### c. Check Submodule Changes
+
+For each important submodule, compare changes between its state in the previous version and current state:
+
+```bash
+cd /Users/theosp/justdo/nodes/justdo-web-app/justdo-web-app
+git diff <old-commit-hash> HEAD -- modules/justdo-packages
+git diff <old-commit-hash> HEAD -- modules/justdo-ee-packages
+```
+
+Then examine changes within each submodule:
+
+```bash
+cd modules/justdo-packages
+git log --pretty=format:"%h %s" <old-submodule-hash>..<new-submodule-hash>
+```
+
+#### d. Check Other Important Repository Submodules
+
+Always check the following critical submodules:
+
+```bash
+# Check bash-helpers changes
+cd /Users/theosp/justdo
+git submodule update --init modules/bash-helpers
+cd modules/bash-helpers
+git log --pretty=format:"%h %s" <old-submodule-hash>..<new-submodule-hash>
+
+# Check justdo-ce changes if relevant
+cd /Users/theosp/justdo
+git submodule update --init modules/justdo-ce
+cd modules/justdo-ce
+git log --pretty=format:"%h %s" <old-submodule-hash>..<new-submodule-hash>
+```
+
+### 3. Organizing Changelog Entries
+
+Changelog entries should be organized as follows:
+
+#### Format
+
+```
+YYYY.MM.DD, Version X.Y.Z
+
+* User-facing change 1
+* User-facing change 2
+
+LOW LEVEL CHANGES
+
+* Technical/internal change 1
+* Technical/internal change 2
+```
+
+#### Priority Order
+
+1. User-visible improvements and features
+2. Bug fixes 
+3. Content updates (blog posts, documentation)
+4. Technical/infrastructure changes (under "LOW LEVEL CHANGES")
+
+### 4. Content Guidelines
+
+- **Be specific**: Include issue/PR numbers when available
+- **Be comprehensive**: Document significant changes in all repositories and submodules
+- **Be contextual**: Explain why changes matter, not just what changed
+- **Note dependencies**: If a change in one repo affects another, note this relationship
+- **Special attention**: Always highlight changes to:
+  - Blog posts and content
+  - Database schema
+  - API changes
+  - Performance improvements
+  - Security fixes
+
+### 5. Post-Update Verification
+
+After updating the changelogs:
+
+1. Verify version numbers are consistent across all files
+2. Ensure the date format is consistent (YYYY.MM.DD)
+3. Check for typos and formatting issues
+
+## Note on Selective Updates
+
+It's possible that there will be no updates for the landing app or vice versa - in such cases, only update the changelogs that contain actual changes. The main DevOps changelog should always reflect which components were updated in each version. 

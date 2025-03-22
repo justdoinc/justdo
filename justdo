@@ -33,6 +33,10 @@ case "$helper_name" in
         . "utils/run-justdo" "$@"
     ;;
 
+    "test")
+        . "utils/test-justdo" "$@"
+    ;;
+
     "join-mailing-list")
         if [[ -f ".mailing-list-initialized" ]]; then
             return

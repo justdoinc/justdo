@@ -13,7 +13,7 @@ Rules in the `.cursor/rules` directory follow this structure:
 
 Each rule file has a YAML frontmatter section at the top with these properties:
 
-```yaml
+```
 ---
 description: Brief description of what the rule does
 globs: **/*.js, **/*.ts # File patterns this rule applies to

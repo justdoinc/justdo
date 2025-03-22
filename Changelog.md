@@ -1,3 +1,13 @@
+2025.03.22, Version 5.8.4
+
+* Update web-app to v5.8.4
+* Update landing-app to v5.8.4
+* Update bash-helpers submodule with improved cross-platform compatibility:
+  - Add requireMinimumBashVersion and requireBashVersion functions
+  - Update shebangs in script files
+  - Refactor recursiveEnvsubst to avoid xargs and process files individually
+  - Add strReplace function
+
 2025.03.05, Version 5.8.3
 
 * Update web-app to v5.8.3
